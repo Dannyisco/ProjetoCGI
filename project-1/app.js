@@ -14,6 +14,9 @@ let drawField = true;
 
 let cursorPos = vec2(0.0);
 
+let centerX = 0;
+let centerY = 0;
+
 let time = undefined;
 
 function main(shaders)
@@ -79,6 +82,10 @@ function main(shaders)
                 drawPoints  = !drawPoints;
                 break; 
             case 'Shift':
+                centerX = cursorPos[0];
+                centerY = cursorPos[1];
+                break;
+
         }
     })
     
@@ -159,7 +166,7 @@ function main(shaders)
 
 
 
-    function animate(timestamp)
+    function animate(timestamp, x, y)
     {
         let deltaTime = 0;
 
@@ -193,7 +200,7 @@ function main(shaders)
         gl.useProgram(updateProgram);
 
         gl.uniform1f(uDeltaTime, deltaTime);
-        gl.uniform2f(uOrigin, cursorPos[0], cursorPos[1]);
+        gl.uniform2f(uOrigin, centerX, centerY);
 
         // Setup attributes
         const vPosition = gl.getAttribLocation(updateProgram, "vPosition");
