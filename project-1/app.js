@@ -7,7 +7,7 @@ let inParticlesBuffer, outParticlesBuffer, quadBuffer;
 // Particle system constants
 
 // Total number of particles
-const N_PARTICLES = 1000;
+const N_PARTICLES = 10000;
 
 let drawPoints = true;
 let drawField = true;
@@ -90,6 +90,11 @@ function main(shaders)
     })
     
     canvas.addEventListener("mousedown", function(event) {
+        const initialPos= getCursorPosition(canvas, event);
+        uPosition.push(initialPos);
+        const p = gl.getUniformLocation(updateProgram, "uPosition");
+        gl.uniform1f(p, initialPos);
+        console.log(uPosition[counterPlanets]);
     });
 
     canvas.addEventListener("mousemove", function(event) {
@@ -99,7 +104,16 @@ function main(shaders)
     });
 
     canvas.addEventListener("mouseup", function(event) {
-    })
+        const finalPos = getCursorPosition(canvas, event);
+        let initialPos = uPosition[counterPlanets];
+
+        let radius = (((finalPos[0] - initialPos[0])*2) + ((finalPos[1] - initialPos[1])*2)) * (1/2);
+        uRadius.push(radius);
+        const r = gl.getUniformLocation(updateProgram, "uRadius");
+        gl.uniform1f(r, radius);
+        console.log(uRadius[counterPlanets]);
+        counterPlanets++;
+    });
 
     
     function getCursorPosition(canvas, event) {
@@ -147,9 +161,10 @@ function main(shaders)
             const life = 6.0 + Math.random();
             data.push(life);
 
-            // velocity
-            data.push(0.1*(Math.random()-0.5));
-            data.push(0.1*(Math.random()-0.5));
+             // velocity
+             let angle = 2.0 * Math.PI *  i/nParticles;
+             data.push(0.1*Math.cos(angle)*(Math.tanh(angle * Math.random())-0.5));
+             data.push(0.23*Math.sin(angle)*(Math.tanh(angle * Math.random())-0.5));
         }
 
         inParticlesBuffer = gl.createBuffer();
