@@ -12,6 +12,13 @@ const N_PARTICLES = 10000;
 let drawPoints = true;
 let drawField = true;
 
+
+let counterPlanets=0;
+//const MAX_PLANETS=10;
+
+let uRadius = [];
+let uPosition = [];
+
 let cursorPos = vec2(0.0);
 
 let centerX = 0;
