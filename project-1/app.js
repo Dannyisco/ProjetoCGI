@@ -158,7 +158,7 @@ function main(shaders)
             data.push(0.0);
 
             // life
-            const life = 6.0 + Math.random();
+            const life = 2 + Math.random() * 8;
             data.push(life);
 
              // velocity
