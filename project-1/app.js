@@ -1,5 +1,5 @@
-import { buildProgramFromSources, loadShadersFromURLS, setupWebGL } from '../../libs/utils.js';
-import { vec2, flatten, subtract, dot } from '../../libs/MV.js';
+import { buildProgramFromSources, loadShadersFromURLS, setupWebGL } from '../libs/utils.js';
+import { vec2, flatten, subtract, dot } from '../libs/MV.js';
 
 // Buffers: particles before update, particles after update, quad vertices
 let inParticlesBuffer, outParticlesBuffer, quadBuffer;
@@ -7,10 +7,17 @@ let inParticlesBuffer, outParticlesBuffer, quadBuffer;
 // Particle system constants
 
 // Total number of particles
-const N_PARTICLES = 10000;
+const N_PARTICLES = 100000;
 
 let drawPoints = true;
 let drawField = true;
+
+let n = 6.371000000 * (10**6);
+let counterPlanets=0;
+//const MAX_PLANETS=10;
+
+let uRadius = [];
+let uPosition = [];
 
 let cursorPos = vec2(0.0);
 
@@ -92,15 +99,14 @@ function main(shaders)
     canvas.addEventListener("mousedown", function(event) {
         const initialPos= getCursorPosition(canvas, event);
         uPosition.push(initialPos);
-        const p = gl.getUniformLocation(updateProgram, "uPosition");
-        gl.uniform1f(p, initialPos);
-        console.log(uPosition[counterPlanets]);
+        const p = gl.getUniformLocation(fieldProgram, "uPosition[" + counterPlanets + "]");
+        gl.uniform1f(p, uPosition[counterPlanets]);
     });
 
     canvas.addEventListener("mousemove", function(event) {
         const p = getCursorPosition(canvas, event);
 
-        console.log(p);
+        //console.log(p);
     });
 
     canvas.addEventListener("mouseup", function(event) {
@@ -109,9 +115,14 @@ function main(shaders)
 
         let radius = (((finalPos[0] - initialPos[0])*2) + ((finalPos[1] - initialPos[1])*2)) * (1/2);
         uRadius.push(radius);
-        const r = gl.getUniformLocation(updateProgram, "uRadius");
-        gl.uniform1f(r, radius);
-        console.log(uRadius[counterPlanets]);
+        const r = gl.getUniformLocation(fieldProgram, "uRadius[" + counterPlanets + "]");
+        gl.uniform1f(r, uRadius[counterPlanets]*n);
+        //const Re = gl.getUniformLocation(fieldProgram, "Re");
+        //gl.uniform1f(Re,n);
+        //const counter = gl.getUniformLocation(fieldProgram, "counter");
+       // gl.uniform1f(counter, counterPlanets);
+        
+
         counterPlanets++;
     });
 
@@ -149,8 +160,8 @@ function main(shaders)
 
         for(let i=0; i<nParticles; ++i) {
             // position
-            const x = 2.0*(Math.random()-0.5)*1.5;
-            const y = 2.0*(Math.random()-0.5)*(1.5 * canvas.height / canvas.width);
+            const x = 2.0*Math.random() -1;
+            const y = 2.0*Math.random() -1;
 
             data.push(x); data.push(y);
             
@@ -215,7 +226,7 @@ function main(shaders)
         gl.useProgram(updateProgram);
 
         gl.uniform1f(uDeltaTime, deltaTime);
-        gl.uniform2f(uOrigin, centerX, centerY);
+        gl.uniform2f(uOrigin, cursorPos[0], cursorPos[1]);
 
         // Setup attributes
         const vPosition = gl.getAttribLocation(updateProgram, "vPosition");

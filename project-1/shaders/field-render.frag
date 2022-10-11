@@ -1,15 +1,19 @@
 precision highp float;
 
 varying vec2 fPosition;
+const int MAX_PLANETS=10;
+const int counter = 0;
+uniform float uRadius[MAX_PLANETS];
+uniform vec2 uPosition[MAX_PLANETS];
 
 void main() {
     
     //gl_FragColor = vec4(mod(fPosition.x, 1.0), mod(fPosition.y, 1.0), 0.0, 1.0);
 
-    highp float radius = 0.1;
+    highp float radius = uRadius[counter];
     highp float pi = 3.1415926535897932384626433832795;
     
-    vec2 center = vec2(0.0);
+    vec2 center = uPosition[counter];
     highp float value = distance(center, fPosition);
 
     vec2 v1 = vec2(-radius, 0);
