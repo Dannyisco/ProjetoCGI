@@ -30,12 +30,15 @@ highp float rand(vec2 co)
     return fract(sin(sn) * c);
 }
 
-void main() {
+
 
    /* Update parameters according to our simple rules.*/
+   void main() {
    vPositionOut = vPosition + vVelocity * uDeltaTime;
    vAgeOut = vAge + uDeltaTime;
    vLifeOut = vLife;
+   vVelocityOut = vVelocity + net_force(vPosition) * uDeltaTime;
+
 
    vec2 accel = vec2(0.0);
    vVelocityOut = vVelocity + accel * uDeltaTime;
