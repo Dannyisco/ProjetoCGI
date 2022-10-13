@@ -8,11 +8,13 @@ let inParticlesBuffer, outParticlesBuffer, quadBuffer;
 
 // Total number of particles
 const N_PARTICLES = 100000;
+const MAX_LIFE = vec2(2, 20);
+const MIN_LIFE = vec2(1, 19);
 
 let drawPoints = true;
 let drawField = true;
 
-let n = 6.371000000 * (10**6);
+let n = 6.371 * (10**6);
 let counterPlanets=0;
 //const MAX_PLANETS=10;
 
@@ -23,6 +25,14 @@ let cursorPos = vec2(0.0);
 
 let centerX = 0;
 let centerY = 0;
+
+let lifeMin = 2;
+let lifeMax = 10;
+
+let velocityMin = 0.1;
+let velocityMax = 0.2;
+
+let open = 2.0;
 
 let time = undefined;
 
@@ -63,8 +73,16 @@ function main(shaders)
         console.log(event.key);
         switch(event.key) {
             case "PageUp":
+                if(event.shiftKey)
+                    velocityMax += 0.1
+                else
+                    velocityMax += 0.1
                 break;
             case "PageDown":
+                if(event.shiftKey)
+                    velocityMin -= 0.1
+                else
+                    velocityMax -= 0.1
                 break;
             case "ArrowUp":
                 break;
@@ -75,12 +93,20 @@ function main(shaders)
             case "ArrowRight":
                 break;
             case 'q':
+                if(lifeMin < MIN_LIFE.y)
+                    lifeMin += 1;
                 break;
             case 'a':
+                if(lifeMin > MIN_LIFE.x)
+                    lifeMin -= 1;
                 break;
             case 'w':
+                if(lifeMax < MAX_LIFE.y)
+                    lifeMax += 1;
                 break;
             case 's':
+                if(lifeMax > MAX_LIFE.x)
+                    lifeMax -= 1;
                 break;
             case '0':
                 drawField = !drawField;
@@ -97,10 +123,8 @@ function main(shaders)
     })
     
     canvas.addEventListener("mousedown", function(event) {
-        const initialPos= getCursorPosition(canvas, event);
+        let initialPos= getCursorPosition(canvas, event);
         uPosition.push(initialPos);
-        const p = gl.getUniformLocation(fieldProgram, "uPosition[" + counterPlanets + "]");
-        gl.uniform1f(p, uPosition[counterPlanets]);
     });
 
     canvas.addEventListener("mousemove", function(event) {
@@ -110,31 +134,22 @@ function main(shaders)
     });
 
     canvas.addEventListener("mouseup", function(event) {
-        const finalPos = getCursorPosition(canvas, event);
+        let finalPos = getCursorPosition(canvas, event);
         let initialPos = uPosition[counterPlanets];
-
-        let radius = (((finalPos[0] - initialPos[0])*2) + ((finalPos[1] - initialPos[1])*2)) * (1/2);
+        let radius = Math.hypot(finalPos[0] - initialPos[0], finalPos[1] - initialPos[1]) * n; 
+        //let radius = (((finalPos[0] - initialPos[0])*2) + ((finalPos[1] - initialPos[1])*2)) * (1/2);
         uRadius.push(radius);
-        const r = gl.getUniformLocation(fieldProgram, "uRadius[" + counterPlanets + "]");
-        gl.uniform1f(r, uRadius[counterPlanets]*n);
-        //const Re = gl.getUniformLocation(fieldProgram, "Re");
-        //gl.uniform1f(Re,n);
-        //const counter = gl.getUniformLocation(fieldProgram, "counter");
-       // gl.uniform1f(counter, counterPlanets);
-        
-
+      
         counterPlanets++;
     });
 
     
     function getCursorPosition(canvas, event) {
-  
-       
         const mx = event.offsetX;
         const my = event.offsetY;
 
-        cursorPos[0]=((mx / canvas.width * 2) - 1);
-        cursorPos[1]=  (((canvas.height - my)/canvas.height * 2) -1);
+        cursorPos[0]=((mx / canvas.width * 2) - 1) * 1.5;;
+        cursorPos[1]=(((canvas.height - my)/canvas.height * 2) -1)*(1.5 * canvas.height / canvas.width);
 
         const x = ((mx / canvas.width * 2) - 1) * 1.5;
         const y = (((canvas.height - my)/canvas.height * 2) -1)*(1.5 * canvas.height / canvas.width);
@@ -160,8 +175,8 @@ function main(shaders)
 
         for(let i=0; i<nParticles; ++i) {
             // position
-            const x = 2.0*Math.random() -1;
-            const y = 2.0*Math.random() -1;
+            const x = 3.0*Math.random() -1.5;
+            const y = 3.0*Math.random() -1.5;
 
             data.push(x); data.push(y);
             
@@ -169,13 +184,16 @@ function main(shaders)
             data.push(0.0);
 
             // life
-            const life = 2 + Math.random() * 8;
+            const life = Math.random() * (lifeMax - lifeMin) + lifeMin
             data.push(life);
 
-             // velocity
-             let angle = 2.0 * Math.PI *  i/nParticles;
-             data.push(0.1*Math.cos(angle)*(Math.tanh(angle * Math.random())-0.5));
-             data.push(0.23*Math.sin(angle)*(Math.tanh(angle * Math.random())-0.5));
+
+            // velocity
+            let angle = (2.0 * Math.random()-1) * Math.PI;
+            let velocity = 0.1;//Math.random() * (velocityMax - velocityMin) + velocityMin;
+
+            data.push(velocity*Math.cos(angle));
+            data.push(velocity*Math.sin(angle));
         }
 
         inParticlesBuffer = gl.createBuffer();
@@ -189,6 +207,7 @@ function main(shaders)
         gl.bindBuffer(gl.ARRAY_BUFFER, outParticlesBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(data), gl.STREAM_DRAW);
     }
+
 
 
 
@@ -222,12 +241,31 @@ function main(shaders)
         // Setup uniforms
         const uDeltaTime = gl.getUniformLocation(updateProgram, "uDeltaTime");
         const uOrigin = gl.getUniformLocation(updateProgram, "uOrigin");
-        
+        const uLifeMin = gl.getUniformLocation(updateProgram, "uLifeMin");
+        const uLifeMax = gl.getUniformLocation(updateProgram, "uLifeMax");
+        const uVelocityMin = gl.getUniformLocation(updateProgram, "uVelocityMin");
+        const uVelocityMax = gl.getUniformLocation(updateProgram, "uVelocityMax");
+        const uCounter = gl.getUniformLocation(updateProgram, "uCounter");
+
         gl.useProgram(updateProgram);
 
         gl.uniform1f(uDeltaTime, deltaTime);
-        gl.uniform2f(uOrigin, cursorPos[0], cursorPos[1]);
-
+        gl.uniform2f(uOrigin, centerX, centerY);
+        gl.uniform1f(uLifeMin, lifeMin);
+        gl.uniform1f(uLifeMax, lifeMax);
+        gl.uniform1f(uVelocityMin, velocityMin);
+        gl.uniform1f(uVelocityMax, velocityMax);
+        gl.uniform1i(uCounter, counterPlanets);
+        
+        for(let i=0; i<counterPlanets; i++) {
+            // Get the location of the uniforms...
+            const a = gl.getUniformLocation(updateProgram, "uPosition[" + i + "]");
+            const b = gl.getUniformLocation(updateProgram, "uRadius[" + i + "]");
+            // Send the corresponding values to the GLSL program
+            gl.uniform2fv(a, uPosition[i]);
+            gl.uniform1f(b, uRadius[i]);
+        }
+       
         // Setup attributes
         const vPosition = gl.getAttribLocation(updateProgram, "vPosition");
         const vAge = gl.getAttribLocation(updateProgram, "vAge");
@@ -270,6 +308,14 @@ function main(shaders)
         const uScale = gl.getUniformLocation(fieldProgram, "uScale");
         gl.uniform2f(uScale, 1.5, 1.5 * canvas.height / canvas.width);
 
+        for(let i=0; i<counterPlanets; i++) {
+            // Get the location of the uniforms...
+            const a = gl.getUniformLocation(fieldProgram, "uPosition[" + i + "]");
+            const b = gl.getUniformLocation(fieldProgram, "uRadius[" + i + "]");
+            // Send the corresponding values to the GLSL program
+            gl.uniform2fv(a, uPosition[i]);
+            gl.uniform1f(b, uRadius[i]);
+        }
 
         // Setup attributes
         const vPosition = gl.getAttribLocation(fieldProgram, "vPosition"); 
@@ -288,7 +334,9 @@ function main(shaders)
 
         // Setup attributes
         const vPosition = gl.getAttribLocation(renderProgram, "vPosition");
-       
+        const uScale = gl.getUniformLocation(renderProgram, "uScale");
+
+        gl.uniform2f(uScale, 1.5, 1.5 * canvas.height / canvas.width);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
@@ -297,6 +345,7 @@ function main(shaders)
 
         gl.drawArrays(gl.POINTS, 0, nParticles);
     }
+
 }
 
 
