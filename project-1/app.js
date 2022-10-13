@@ -32,6 +32,9 @@ let lifeMax = 10;
 let velocityMin = 0.1;
 let velocityMax = 0.2;
 
+let spreadAngle = Math.PI;
+let angleDirect = 0.0;
+
 let open = 2.0;
 
 let time = undefined;
@@ -74,23 +77,33 @@ function main(shaders)
         switch(event.key) {
             case "PageUp":
                 if(event.shiftKey)
-                    velocityMax += 0.1
+                    velocityMax += 0.1;
                 else
-                    velocityMax += 0.1
+                    velocityMax += 0.1;
                 break;
             case "PageDown":
                 if(event.shiftKey)
-                    velocityMin -= 0.1
+                    velocityMin -= 0.1;
                 else
-                    velocityMax -= 0.1
+                    velocityMax -= 0.1;
                 break;
             case "ArrowUp":
+                if(spreadAngle + 0.05 > Math.PI)
+                    spreadAngle = Math.PI;
+                else
+                    spreadAngle += 0.05;
                 break;
             case "ArrowDown":
-                break;
+                if(spreadAngle - 0.05 < -Math.PI)
+                    spreadAngle = -Math.PI;
+                else
+                    spreadAngle -= 0.05;
+                break;    
             case "ArrowLeft":
+                angleDirect+=0.02;
                 break;
             case "ArrowRight":
+                angleDirect-=0.02;
                 break;
             case 'q':
                 if(lifeMin < MIN_LIFE.y)
@@ -136,7 +149,7 @@ function main(shaders)
     canvas.addEventListener("mouseup", function(event) {
         let finalPos = getCursorPosition(canvas, event);
         let initialPos = uPosition[counterPlanets];
-        let radius = Math.hypot(finalPos[0] - initialPos[0], finalPos[1] - initialPos[1]) * n; 
+        let radius = (Math.hypot(finalPos[0] - initialPos[0], finalPos[1] - initialPos[1])) * n; 
         //let radius = (((finalPos[0] - initialPos[0])*2) + ((finalPos[1] - initialPos[1])*2)) * (1/2);
         uRadius.push(radius);
       
@@ -246,6 +259,8 @@ function main(shaders)
         const uVelocityMin = gl.getUniformLocation(updateProgram, "uVelocityMin");
         const uVelocityMax = gl.getUniformLocation(updateProgram, "uVelocityMax");
         const uCounter = gl.getUniformLocation(updateProgram, "uCounter");
+        const uAngle = gl.getUniformLocation(updateProgram, "uAngle");
+        const uAngleDirect = gl.getUniformLocation(updateProgram, "uAngleDirect");
 
         gl.useProgram(updateProgram);
 
@@ -256,6 +271,9 @@ function main(shaders)
         gl.uniform1f(uVelocityMin, velocityMin);
         gl.uniform1f(uVelocityMax, velocityMax);
         gl.uniform1i(uCounter, counterPlanets);
+        gl.uniform1f(uAngle, spreadAngle);
+        gl.uniform1f(uAngleDirect, angleDirect);
+
         
         for(let i=0; i<counterPlanets; i++) {
             // Get the location of the uniforms...
@@ -306,7 +324,9 @@ function main(shaders)
 
         // Setup Uniform
         const uScale = gl.getUniformLocation(fieldProgram, "uScale");
+        const uCounter = gl.getUniformLocation(fieldProgram, "uCounter");
         gl.uniform2f(uScale, 1.5, 1.5 * canvas.height / canvas.width);
+        gl.uniform1i(uCounter, counterPlanets);
 
         for(let i=0; i<counterPlanets; i++) {
             // Get the location of the uniforms...
