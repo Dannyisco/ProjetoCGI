@@ -306,7 +306,10 @@ function main(shaders)
 
         // Setup Uniform
         const uScale = gl.getUniformLocation(fieldProgram, "uScale");
+        const uCounter = gl.getUniformLocation(fieldProgram, "uCounter");
+
         gl.uniform2f(uScale, 1.5, 1.5 * canvas.height / canvas.width);
+        gl.uniform1i(uCounter, counterPlanets);
 
         for(let i=0; i<counterPlanets; i++) {
             // Get the location of the uniforms...
