@@ -10,6 +10,9 @@ let inParticlesBuffer, outParticlesBuffer, quadBuffer;
 const N_PARTICLES = 100000;
 const MAX_LIFE = vec2(2, 20);
 const MIN_LIFE = vec2(1, 19);
+const ANGLE = vec2(-Math.PI, Math.PI);
+const TEN_DEGREES = 10/180 * Math.PI
+
 
 let drawPoints = true;
 let drawField = true;
@@ -32,10 +35,8 @@ let lifeMax = 10;
 let velocityMin = 0.1;
 let velocityMax = 0.2;
 
-let spreadAngle = Math.PI;
-let angleDirect = 0.0;
-
-let open = 2.0;
+let angleMin = -1.0 * Math.PI;
+let angleMax = 1.0 * Math.PI;
 
 let time = undefined;
 
@@ -88,16 +89,12 @@ function main(shaders)
                     velocityMax -= 0.1;
                 break;
             case "ArrowUp":
-                if(spreadAngle + 0.05 > Math.PI)
-                    spreadAngle = Math.PI;
-                else
-                    spreadAngle += 0.05;
+                if(angleMax < ANGLE.y)
+                    angleMax += TEN_DEGREES;
                 break;
             case "ArrowDown":
-                if(spreadAngle - 0.05 < -Math.PI)
-                    spreadAngle = -Math.PI;
-                else
-                    spreadAngle -= 0.05;
+                if(angleMax > ANGLE.x)
+                    angleMax -= TEN_DEGREES;
                 break;    
             case "ArrowLeft":
                 angleDirect+=0.02;
@@ -138,6 +135,9 @@ function main(shaders)
     canvas.addEventListener("mousedown", function(event) {
         let initialPos= getCursorPosition(canvas, event);
         uPosition.push(initialPos);
+
+
+
     });
 
     canvas.addEventListener("mousemove", function(event) {
@@ -150,7 +150,7 @@ function main(shaders)
         let finalPos = getCursorPosition(canvas, event);
         let initialPos = uPosition[counterPlanets];
         let radius = (Math.hypot(finalPos[0] - initialPos[0], finalPos[1] - initialPos[1])) * n; 
-        //let radius = (((finalPos[0] - initialPos[0])*2) + ((finalPos[1] - initialPos[1])*2)) * (1/2);
+
         uRadius.push(radius);
       
         counterPlanets++;
@@ -202,8 +202,8 @@ function main(shaders)
 
 
             // velocity
-            let angle = (2.0 * Math.random()-1) * Math.PI;
-            let velocity = 0.1;//Math.random() * (velocityMax - velocityMin) + velocityMin;
+            let angle = Math.random() * (angleMax - angleMin) + angleMin;
+            let velocity = Math.random() * (velocityMax - velocityMin) + velocityMin;
 
             data.push(velocity*Math.cos(angle));
             data.push(velocity*Math.sin(angle));
@@ -259,8 +259,8 @@ function main(shaders)
         const uVelocityMin = gl.getUniformLocation(updateProgram, "uVelocityMin");
         const uVelocityMax = gl.getUniformLocation(updateProgram, "uVelocityMax");
         const uCounter = gl.getUniformLocation(updateProgram, "uCounter");
-        const uAngle = gl.getUniformLocation(updateProgram, "uAngle");
-        const uAngleDirect = gl.getUniformLocation(updateProgram, "uAngleDirect");
+        const uAngleMin = gl.getUniformLocation(updateProgram, "uAngleMin");
+        const uAngleMax = gl.getUniformLocation(updateProgram, "uAngleMax");
 
         gl.useProgram(updateProgram);
 
@@ -271,8 +271,8 @@ function main(shaders)
         gl.uniform1f(uVelocityMin, velocityMin);
         gl.uniform1f(uVelocityMax, velocityMax);
         gl.uniform1i(uCounter, counterPlanets);
-        gl.uniform1f(uAngle, spreadAngle);
-        gl.uniform1f(uAngleDirect, angleDirect);
+        gl.uniform1f(uAngleMin, angleMin);
+        gl.uniform1f(uAngleMax, angleMax);
 
         
         for(let i=0; i<counterPlanets; i++) {

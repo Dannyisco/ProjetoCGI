@@ -14,8 +14,8 @@ uniform float uLifeMin;
 uniform float uLifeMax;
 uniform float uVelocityMin;
 uniform float uVelocityMax;
-uniform float uAngle;
-uniform float uAngleDirect;
+uniform float uAngleMin;
+uniform float uAngleMax;
 
 
 /* Number of seconds (possibly fractional) that has passed since the last
@@ -68,18 +68,19 @@ vec2 net_force(vec2 vPosition) {
 
    /* Update parameters according to our simple rules.*/
 void main() {
-   //vec2 velocity = vec2(rand(vPosition) * (uVelocityMax - uVelocityMin) + uVelocityMin);
+
+   highp float angle = rand(vPosition*uDeltaTime) * (uAngleMax - uAngleMin) + uAngleMin;
+   highp float velocity = rand(vVelocity*uDeltaTime) * (uVelocityMax - uVelocityMin) + uVelocityMin;
 
    vPositionOut = vPosition + vVelocity * uDeltaTime;
    vAgeOut = vAge + uDeltaTime;
-   vLifeOut = rand(vPosition) * (uLifeMax - uLifeMin) + uLifeMin;
-   vVelocityOut = vVelocity + net_force(vPosition) * uDeltaTime;
+   vLifeOut = rand(vPosition * uDeltaTime) * (uLifeMax - uLifeMin) + uLifeMin;
+   vVelocityOut = vec2(velocity*cos(angle), velocity*sin(angle)) + net_force(vPosition) * uDeltaTime;
+
       
    if (vAgeOut >= vLife) {
       vAgeOut = 0.0;
       vPositionOut = uOrigin;
-      vLifeOut = rand(vPosition) * (uLifeMax - uLifeMin) + uLifeMin;
-      vVelocityOut = vec2(uVelocityMin*cos(((2.0-uAngleDirect) * rand(vPosition)-1.0) * uAngle), uVelocityMin*sin(((2.0-uAngleDirect) * rand(vPosition)-1.0) * uAngle));
    }
 
 }

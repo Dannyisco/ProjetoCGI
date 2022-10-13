@@ -2,7 +2,7 @@ precision highp float;
 
 varying vec2 fPosition;
 const int MAX_PLANETS = 10;
-const int uCounter = 0;
+uniform int uCounter;
 uniform float uRadius[MAX_PLANETS];
 uniform vec2 uPosition[MAX_PLANETS];
 const float G_CONSTANT = 6.67 * pow(10.0, -11.0);
@@ -27,7 +27,7 @@ vec2 net_force(vec2 fPosition) {
       highp float mass = 4.0 * 3.1415 * pow(uRadius[i], 3.0) * DENSITY / 3.0;
       vec2 r = vec2(uPosition[i].x - fPosition.x, uPosition[i].y - fPosition.y);
 
-      gfSum += normalize(r) * G_CONSTANT * mass / (pow(length(r), 2.0)*RE);
+      gfSum += normalize(r) * G_CONSTANT * mass / (pow(length(r)*RE, 2.0));
    }
 
    return gfSum;
@@ -38,8 +38,15 @@ void main() {
     highp float angle = atan(force.y, force.x)/(2.0*pi);
     highp float intensity = length(force);
     
+    
+      if(uCounter > 0) {
+         gl_FragColor = vec4(hsv2rgb(vec3(angle, 1.0, 1.0)), pow(intensity, 2.0)/intensity);
 
-        gl_FragColor = vec4(hsv2rgb(vec3(angle, 1.0, 1.0)), 1.0);
+         if (mod(log(intensity), 1.5) <= 0.6  && mod(log(intensity), 1.5) >= 0.5)
+            gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+      }
+      else
+         gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
    
 
 }
