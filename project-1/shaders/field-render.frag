@@ -24,12 +24,17 @@ vec2 net_force(vec2 fPosition) {
       if(i >= uCounter)
          break;
 
-      highp float mass = 4.0 * 3.1415 * pow(uRadius[i], 3.0) * DENSITY / 3.0;
       vec2 r = vec2(uPosition[i].x - fPosition.x, uPosition[i].y - fPosition.y);
+      highp float distance = length(r)*RE;
+      highp float mass = 0.0;
 
-      gfSum += normalize(r) * G_CONSTANT * mass / (pow(length(r)*RE, 2.0));
+      if(distance <= uRadius[i])
+         mass = 4.0 * 3.1415 * pow(distance, 3.0) * DENSITY / 3.0;
+      else 
+         mass = 4.0 * 3.1415 * pow(uRadius[i], 3.0) * DENSITY / 3.0;
+         
+      gfSum += normalize(r) * G_CONSTANT * mass / (pow(distance, 2.0));
    }
-
    return gfSum;
 }
 
@@ -42,7 +47,7 @@ void main() {
       if(uCounter > 0) {
          gl_FragColor = vec4(hsv2rgb(vec3(angle, 1.0, 1.0)), pow(intensity, 2.0)/intensity);
 
-         if (mod(log(intensity), 1.5) <= 0.6  && mod(log(intensity), 1.5) >= 0.5)
+         if (mod(intensity, 2.0) < 0.8*2.0  && mod(intensity, 2.0) > 0.8)
             gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
       }
       else
