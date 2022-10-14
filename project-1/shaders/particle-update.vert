@@ -15,6 +15,7 @@ uniform float uLifeMax;
 uniform float uVelocityMin;
 uniform float uVelocityMax;
 uniform float uAngleMin;
+uniform float uAngleDirect;
 uniform float uAngleMax;
 
 
@@ -48,19 +49,21 @@ highp float rand(vec2 co) {
     return fract(sin(sn) * c);
 }
 
-vec2 net_force(vec2 vPosition) {
+vec2 net_force(vec2 fPosition) {
    vec2 gfSum = vec2(0.0);
 
    for(int i = 0; i < MAX_PLANETS; i++) {
       if(i >= uCounter)
          break;
 
-      highp float mass = 4.0 * 3.1415 * pow(uRadius[i], 3.0) * DENSITY / 3.0;
-      vec2 r = vec2(uPosition[i].x - vPosition.x, uPosition[i].y - vPosition.y);
+      vec2 r = uPosition[i] - fPosition;
+      highp float distance = length(r)*RE;
+      highp float mass = 0.0;
 
-      gfSum += normalize(r) * G_CONSTANT * mass / (pow(length(r)*RE, 2.0));
+      mass = 4.0 * 3.1415 * pow(uRadius[i], 3.0) * DENSITY / 3.0;
+         
+      gfSum += normalize(r) * G_CONSTANT * mass / (pow(distance, 2.0));
    }
-
    return gfSum;
 }
 
@@ -69,8 +72,7 @@ vec2 net_force(vec2 vPosition) {
    /* Update parameters according to our simple rules.*/
 void main() {
 
-   highp float angle = rand(vPosition*uDeltaTime) * (uAngleMax - uAngleMin) + uAngleMin;
-   highp float velocity = rand(vVelocity*uDeltaTime) * (uVelocityMax - uVelocityMin) + uVelocityMin;
+   float angle = rand(vPosition) * (uAngleMax - uAngleMin) + uAngleMin;
 
    vPositionOut = vPosition + vVelocity * uDeltaTime;
    vAgeOut = vAge + uDeltaTime;
@@ -82,6 +84,9 @@ void main() {
    if (vAgeOut >= vLife) {
       vAgeOut = 0.0;
       vPositionOut = uOrigin;
+      vLifeOut = rand(vPosition * uDeltaTime) * (uLifeMax - uLifeMin) + uLifeMin;
+      float velocity = rand(vPosition*uDeltaTime) * (uVelocityMax - uVelocityMin) + uVelocityMin;
+      vVelocityOut = vec2(velocity*cos( uAngleDirect + angle), velocity * sin( uAngleDirect + angle));
       
    }
 
