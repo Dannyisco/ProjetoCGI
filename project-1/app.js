@@ -148,8 +148,8 @@ function main(shaders)
         let initialPos= getCursorPosition(canvas, event);
         isDrawing= true;
         uPosition.push(initialPos);
-
         counterPlanets++;
+       
 
     });
 
@@ -159,21 +159,20 @@ function main(shaders)
         if(isDrawing==true){
             let initialPos = uPosition[counterPlanets-1];
             let radius = (Math.hypot(p[0] - initialPos[0], p[1] - initialPos[1])) * n;
+            console.log(radius);
             uRadius[counterPlanets-1] = radius;
         }
         
-        //console.log(p);
     });
 
     canvas.addEventListener("mouseup", function(event) {
-        let finalPos = getCursorPosition(canvas, event);
-        let initialPos = uPosition[counterPlanets];
-        let radius =  uRadius[counterPlanets-1] = radius;
-
+        let radius =  uRadius[counterPlanets-1];
         uRadius.push(radius);
+        console.log(radius);
         isDrawing=false;
         
     });
+
 
     
     function getCursorPosition(canvas, event) {
