@@ -7,18 +7,18 @@ let inParticlesBuffer, outParticlesBuffer, quadBuffer;
 // Particle system constants
 
 // Total number of particles
-const N_PARTICLES = 100000;
+const N_PARTICLES = 10 ** 6;
 const MAX_LIFE = vec2(2, 20);
 const MIN_LIFE = vec2(1, 19);
-const ANGLE = vec2(-Math.PI, Math.PI);
-const TEN_DEGREES = 0.05;///180 * Math.PI
-
+const TEN_DEGREES = 0.05; 
+const DIST_SCALE = 6.371 * (10**6);
 
 let drawPoints = true;
 let drawField = true;
 
-let n = 6.371 * (10**6);
-let counterPlanets=0;
+let counterField=0;
+let counterParticles=0;
+
 let isDrawing = false;
 
 let uRadius = [];
@@ -35,8 +35,9 @@ let lifeMax = 10;
 let velocityMin = 0.1;
 let velocityMax = 0.2;
 let angleDirect = 0.0;
-let angleMin = -Math.PI;
-let angleMax = Math.PI;
+let angle = Math.PI;
+
+let invert = 1;
 
 let time = undefined;
 
@@ -77,35 +78,31 @@ function main(shaders)
         console.log(event.key);
         switch(event.key) {
             case "PageUp":
-                if(event.shiftKey)
+                if(event.shiftKey && velocityMin + 0.01 < velocityMax)
                     velocityMin += 0.01;
-                else
+                else 
                     velocityMax += 0.01;
                 break;
             case "PageDown":
-                if(event.shiftKey)
+                if(event.shiftKey && velocityMin - 0.01 > 0.1)
                     velocityMin -= 0.01;
-                else
+                else if(velocityMax - 0.01 > velocityMin)
                     velocityMax -= 0.01;
                 break;
             case "ArrowUp":
-                if(angleMax - 0.05 > 0.0 ){
-                    angleMax -= 0.05;
-                    angleMin += 0.05;
+                if(angle - TEN_DEGREES > 0.0 ){
+                    angle -= TEN_DEGREES;
                 }
                 else{
-                    angleMax = 0.0;
-                    angleMin = 0.0;
+                    angle = 0.0;
                 }
                 break;
             case "ArrowDown":
-                if(angleMax + 0.05 < Math.PI){
-                        angleMax += 0.05;
-                        angleMin -= 0.05;
+                if(angle + TEN_DEGREES < Math.PI){
+                        angle += TEN_DEGREES;
                 }
                  else{
-                        angleMax = Math.PI;
-                        angleMin = -Math.PI;
+                        angle = Math.PI;
                 }
                 break;      
             case "ArrowLeft":
@@ -115,7 +112,7 @@ function main(shaders)
                 angleDirect-=0.02;
                 break;
             case 'q':
-                if(lifeMin < MIN_LIFE[1])
+                if(lifeMin < MIN_LIFE[1] && lifeMin + 1 < lifeMax)
                     lifeMin += 1;
                 break;
             case 'a':
@@ -127,7 +124,7 @@ function main(shaders)
                     lifeMax += 1;
                 break;
             case 's':
-                if(lifeMax > MAX_LIFE[0])
+                if(lifeMax > MAX_LIFE[0] && lifeMax - 1 > lifeMin)
                     lifeMax -= 1;
                 break;
             case '0':
@@ -140,7 +137,9 @@ function main(shaders)
                 centerX = cursorPos[0];
                 centerY = cursorPos[1];
                 break;
-
+            case 'i':
+                invert *= (-1);
+                break;
         }
     })
     
@@ -148,29 +147,29 @@ function main(shaders)
         let initialPos= getCursorPosition(canvas, event);
         isDrawing= true;
         uPosition.push(initialPos);
-        counterPlanets++;
-       
-
+        counterField++;
+        
     });
 
     canvas.addEventListener("mousemove", function(event) {
         const p = getCursorPosition(canvas, event);
         
         if(isDrawing==true){
-            let initialPos = uPosition[counterPlanets-1];
-            let radius = (Math.hypot(p[0] - initialPos[0], p[1] - initialPos[1])) * n;
-            console.log(radius);
-            uRadius[counterPlanets-1] = radius;
+            let initialPos = uPosition[counterField-1];
+            let radius = (Math.hypot(p[0] - initialPos[0], p[1] - initialPos[1])) * DIST_SCALE;
+
+            uRadius[counterField-1] = radius;
         }
         
     });
 
     canvas.addEventListener("mouseup", function(event) {
-        let radius =  uRadius[counterPlanets-1];
-        uRadius.push(radius);
-        console.log(radius);
         isDrawing=false;
-        
+        if(uRadius[counterField-1] > 0.0) 
+            counterParticles++;
+        else {
+            counterField--;
+        }
     });
 
 
@@ -276,8 +275,8 @@ function main(shaders)
         const uVelocityMax = gl.getUniformLocation(updateProgram, "uVelocityMax");
         const uCounter = gl.getUniformLocation(updateProgram, "uCounter");
         const uAngleDirect = gl.getUniformLocation(updateProgram, "uAngleDirect");
-        const uAngleMax = gl.getUniformLocation(updateProgram, "uAngleMax");
-        const uAngleMin = gl.getUniformLocation(updateProgram, "uAngleMin");
+        const uAngle = gl.getUniformLocation(updateProgram, "uAngle");
+        const uInvert = gl.getUniformLocation(updateProgram, "uInvert");
 
         gl.useProgram(updateProgram);
 
@@ -287,14 +286,13 @@ function main(shaders)
         gl.uniform1f(uLifeMax, lifeMax);
         gl.uniform1f(uVelocityMin, velocityMin);
         gl.uniform1f(uVelocityMax, velocityMax);
-        gl.uniform1i(uCounter, counterPlanets);
+        gl.uniform1i(uCounter, counterParticles);
         gl.uniform1f(uAngleDirect, angleDirect);
+        gl.uniform1f(uAngle, angle);
+        gl.uniform1f(uInvert, invert);
+     
         
-        
-        gl.uniform1f(uAngleMax, angleMax);
-        gl.uniform1f(uAngleMin, angleMin);
-        
-        for(let i=0; i<counterPlanets; i++) {
+        for(let i=0; i<counterParticles; i++) {
             // Get the location of the uniforms...
             const a = gl.getUniformLocation(updateProgram, "uPosition[" + i + "]");
             const b = gl.getUniformLocation(updateProgram, "uRadius[" + i + "]");
@@ -345,9 +343,9 @@ function main(shaders)
         const uScale = gl.getUniformLocation(fieldProgram, "uScale");
         const uCounter = gl.getUniformLocation(fieldProgram, "uCounter");
         gl.uniform2f(uScale, 1.5, 1.5 * canvas.height / canvas.width);
-        gl.uniform1i(uCounter, counterPlanets);
+        gl.uniform1i(uCounter, counterField);
 
-        for(let i=0; i<counterPlanets; i++) {
+        for(let i=0; i<counterField; i++) {
             // Get the location of the uniforms...
             const a = gl.getUniformLocation(fieldProgram, "uPosition[" + i + "]");
             const b = gl.getUniformLocation(fieldProgram, "uRadius[" + i + "]");

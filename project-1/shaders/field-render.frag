@@ -1,14 +1,19 @@
 precision highp float;
 
 varying vec2 fPosition;
+
 const int MAX_PLANETS = 10;
-uniform int uCounter;
-uniform float uRadius[MAX_PLANETS];
-uniform vec2 uPosition[MAX_PLANETS];
 const float G_CONSTANT = 6.67 * pow(10.0, -11.0);
 const float DENSITY = 5.51 * pow(10.0, 3.0);
 const float RE = 6.371 * pow(10.0, 6.0);
-const float pi = 3.1415;
+const float PI = 3.1415;
+
+uniform float uRadius[MAX_PLANETS];
+uniform vec2 uPosition[MAX_PLANETS];
+uniform int uCounter;
+
+
+
 
 vec3 hsv2rgb(vec3 c)
 {
@@ -37,18 +42,16 @@ vec2 net_force(vec2 fPosition) {
 
 void main() {
     vec2 force = net_force(fPosition);
-    highp float angle = atan(force.y, force.x)/(2.0*pi);
+    highp float angle = atan(force.y, force.x)/(2.0*PI);
     highp float intensity = length(force);
     
     
       if(uCounter > 0) {
          gl_FragColor = vec4(hsv2rgb(vec3(angle, 1.0, 1.0)), pow(intensity, 0.8));
 
-         if (mod(log(intensity), 2.0) < 1.5  && mod(log(intensity), 2.0) > 1.3)
+         if (mod(log(intensity), 0.6) < 0.3 && mod(log(intensity), 0.6) > 0.2)
             gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
       }
-      else
-         gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
    
 
 }

@@ -1,22 +1,25 @@
 precision mediump float;
 
-
 const int MAX_PLANETS=10;
-uniform float uRadius[MAX_PLANETS];
-uniform vec2 uPosition[MAX_PLANETS];
-uniform int uCounter;
 const float G_CONSTANT = 6.67 * pow(10.0, -11.0);
 const float DENSITY = 5.51 * pow(10.0, 3.0);
 const float RE = 6.371 * pow(10.0, 6.0);
-const float pi = 3.1415;
 
+uniform float uRadius[MAX_PLANETS];
+uniform vec2 uPosition[MAX_PLANETS];
+uniform int uCounter;
 uniform float uLifeMin;
 uniform float uLifeMax;
 uniform float uVelocityMin;
 uniform float uVelocityMax;
-uniform float uAngleMin;
 uniform float uAngleDirect;
-uniform float uAngleMax;
+uniform float uAngle;
+uniform float uInvert;
+
+
+
+
+
 
 
 /* Number of seconds (possibly fractional) that has passed since the last
@@ -64,7 +67,7 @@ vec2 net_force(vec2 fPosition) {
          
       gfSum += normalize(r) * G_CONSTANT * mass / (pow(distance, 2.0));
    }
-   return gfSum;
+   return uInvert * gfSum;
 }
 
 
@@ -72,7 +75,7 @@ vec2 net_force(vec2 fPosition) {
    /* Update parameters according to our simple rules.*/
 void main() {
 
-   float angle = rand(vPosition) * (uAngleMax - uAngleMin) + uAngleMin;
+   float angle = (rand(vPosition) * 2.0 - 1.0) * uAngle;
 
    vPositionOut = vPosition + vVelocity * uDeltaTime;
    vAgeOut = vAge + uDeltaTime;
