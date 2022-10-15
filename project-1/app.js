@@ -7,7 +7,7 @@ let inParticlesBuffer, outParticlesBuffer, quadBuffer;
 // Particle system constants
 
 // Total number of particles
-const N_PARTICLES = 10 ** 6;
+const N_PARTICLES = 10 ** 5;
 const MAX_LIFE = vec2(2, 20);
 const MIN_LIFE = vec2(1, 19);
 const TEN_DEGREES = 0.05; 
@@ -140,13 +140,16 @@ function main(shaders)
             case 'i':
                 invert *= (-1);
                 break;
+                
         }
     })
     
     canvas.addEventListener("mousedown", function(event) {
         let initialPos= getCursorPosition(canvas, event);
         isDrawing= true;
-        uPosition.push(initialPos);
+        
+        uPosition[counterParticles] = initialPos;
+         uRadius[counterParticles]=0;
         counterField++;
         
     });
@@ -155,21 +158,21 @@ function main(shaders)
         const p = getCursorPosition(canvas, event);
         
         if(isDrawing==true){
-            let initialPos = uPosition[counterField-1];
+            let initialPos = uPosition[counterParticles];
             let radius = (Math.hypot(p[0] - initialPos[0], p[1] - initialPos[1])) * DIST_SCALE;
-
-            uRadius[counterField-1] = radius;
+            
+                uRadius[counterParticles] = radius;
         }
         
     });
 
     canvas.addEventListener("mouseup", function(event) {
         isDrawing=false;
-        if(uRadius[counterField-1] > 0.0) 
-            counterParticles++;
-        else {
+            if(uRadius[counterParticles] > 0.0)
+                counterParticles++;
+            else
             counterField--;
-        }
+        
     });
 
 
@@ -292,7 +295,7 @@ function main(shaders)
         gl.uniform1f(uInvert, invert);
      
         
-        for(let i=0; i<counterParticles; i++) {
+        for(let i=0; i<counterField; i++) {
             // Get the location of the uniforms...
             const a = gl.getUniformLocation(updateProgram, "uPosition[" + i + "]");
             const b = gl.getUniformLocation(updateProgram, "uRadius[" + i + "]");
