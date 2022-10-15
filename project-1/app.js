@@ -12,6 +12,7 @@ const MAX_LIFE = vec2(2, 20);
 const MIN_LIFE = vec2(1, 19);
 const TEN_DEGREES = 0.05; 
 const DIST_SCALE = 6.371 * (10**6);
+const MAX_PLANETS=10;
 
 let drawPoints = true;
 let drawField = true;
@@ -140,17 +141,25 @@ function main(shaders)
             case 'i':
                 invert *= (-1);
                 break;
+            case 'd':
+                if(counterParticles>0)
+                    buildParticleExplosion(N_PARTICLES);
+                break;
                 
         }
     })
     
+
+    //enquanto desenha se exerce força..
     canvas.addEventListener("mousedown", function(event) {
         let initialPos= getCursorPosition(canvas, event);
-        isDrawing= true;
         
-        uPosition[counterParticles] = initialPos;
-         uRadius[counterParticles]=0;
-        counterField++;
+        if(counterParticles < MAX_PLANETS){
+            isDrawing= true;
+            uPosition[counterParticles] = initialPos;
+            uRadius[counterParticles]=0;
+            counterField++;
+        }
         
     });
 
@@ -161,18 +170,19 @@ function main(shaders)
             let initialPos = uPosition[counterParticles];
             let radius = (Math.hypot(p[0] - initialPos[0], p[1] - initialPos[1])) * DIST_SCALE;
             
-                uRadius[counterParticles] = radius;
+        uRadius[counterParticles] = radius;
         }
         
     });
 
     canvas.addEventListener("mouseup", function(event) {
         isDrawing=false;
+        if(counterParticles < MAX_PLANETS){
             if(uRadius[counterParticles] > 0.0)
                 counterParticles++;
             else
             counterField--;
-        
+        }
     });
 
 
@@ -217,9 +227,8 @@ function main(shaders)
             data.push(0.0);
 
             // life
-            const life = Math.random() * (lifeMax - lifeMin) + lifeMin
+            const life = Math.random() * (lifeMax - lifeMin) + lifeMin;
             data.push(life);
-
 
             // velocity
 
@@ -239,6 +248,46 @@ function main(shaders)
         gl.bufferData(gl.ARRAY_BUFFER, flatten(data), gl.STREAM_DRAW);
     }
 
+    function buildParticleExplosion(nParticles) {
+
+        let randomPlanetIndex = Math.floor(Math.random() * counterParticles);
+        let planetPos = uPosition[randomPlanetIndex];
+    
+        const data = [];
+
+        for(let i=0; i<nParticles; ++i) {
+            // position
+            const x = planetPos[0];
+            const y = planetPos[1];
+
+            data.push(x); data.push(y);
+            
+            // age
+            data.push(0.0);
+
+            // life
+            const life = 2.0;
+            data.push(life);
+
+
+            // velocity
+
+            //ver donuts
+            let angle = (Math.random() * 2.0 - 1.0) * Math.PI;
+            let velocity = Math.random() * (0.9 - 0.1) + 0.1;
+
+            data.push(velocity * Math.cos(angle));
+            
+            data.push(velocity * Math.sin(angle));
+        }
+        counterField--;
+        counterParticles--;
+        uPosition.splice(randomPlanetIndex, 1);
+        uRadius.splice(randomPlanetIndex, 1);
+
+        
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(data), gl.STREAM_DRAW);
+    }
 
 
 
@@ -301,7 +350,7 @@ function main(shaders)
             const b = gl.getUniformLocation(updateProgram, "uRadius[" + i + "]");
             // Send the corresponding values to the GLSL program
             gl.uniform2fv(a, uPosition[i]);
-            gl.uniform1f(b, uRadius[i]);
+            gl.uniform1f(b, uRadius[i]); 
         }
        
         // Setup attributes
@@ -375,6 +424,7 @@ function main(shaders)
         // Setup attributes
         const vPosition = gl.getAttribLocation(renderProgram, "vPosition");
         const uScale = gl.getUniformLocation(renderProgram, "uScale");
+
 
         gl.uniform2f(uScale, 1.5, 1.5 * canvas.height / canvas.width);
 

@@ -16,12 +16,6 @@ uniform float uAngleDirect;
 uniform float uAngle;
 uniform float uInvert;
 
-
-
-
-
-
-
 /* Number of seconds (possibly fractional) that has passed since the last
    update step. */
 uniform float uDeltaTime;
@@ -80,7 +74,7 @@ void main() {
    vPositionOut = vPosition + vVelocity * uDeltaTime;
    vAgeOut = vAge + uDeltaTime;
    vLifeOut = rand(vPosition * uDeltaTime) * (uLifeMax - uLifeMin) + uLifeMin;
-   vVelocityOut = vVelocity+ net_force(vPosition) * uDeltaTime;
+   vVelocityOut = vVelocity+ net_force(vPosition) * uDeltaTime;  
 
       
       
