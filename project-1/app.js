@@ -17,8 +17,7 @@ const MAX_PLANETS=10;
 let drawPoints = true;
 let drawField = true;
 
-let counterField=0;
-let counterParticles=0;
+let counter=0;
 
 let isDrawing = false;
 
@@ -142,7 +141,7 @@ function main(shaders)
                 invert *= (-1);
                 break;
             case 'd':
-                if(counterParticles>0)
+                if(counter>0)
                     buildParticleExplosion(N_PARTICLES);
                 break;
                 
@@ -154,11 +153,11 @@ function main(shaders)
     canvas.addEventListener("mousedown", function(event) {
         let initialPos= getCursorPosition(canvas, event);
         
-        if(counterParticles < MAX_PLANETS){
+        if(counter < MAX_PLANETS){
             isDrawing= true;
-            uPosition[counterParticles] = initialPos;
-            uRadius[counterParticles]=0;
-            counterField++;
+            uPosition[counter] = initialPos;
+            uRadius[counter]=0;
+            counter++;
         }
         
     });
@@ -167,22 +166,19 @@ function main(shaders)
         const p = getCursorPosition(canvas, event);
         
         if(isDrawing==true){
-            let initialPos = uPosition[counterParticles];
+            let initialPos = uPosition[counter-1];
             let radius = (Math.hypot(p[0] - initialPos[0], p[1] - initialPos[1])) * DIST_SCALE;
             
-        uRadius[counterParticles] = radius;
+            uRadius[counter-1] = radius;
         }
         
     });
 
     canvas.addEventListener("mouseup", function(event) {
         isDrawing=false;
-        if(counterParticles < MAX_PLANETS){
-            if(uRadius[counterParticles] > 0.0)
-                counterParticles++;
-            else
-            counterField--;
-        }
+
+        if(uRadius[counter-1] <= 0.0)
+            counter--;
     });
 
 
@@ -250,7 +246,7 @@ function main(shaders)
 
     function buildParticleExplosion(nParticles) {
 
-        let randomPlanetIndex = Math.floor(Math.random() * counterParticles);
+        let randomPlanetIndex = Math.floor(Math.random() * counter);
         let planetPos = uPosition[randomPlanetIndex];
     
         const data = [];
@@ -266,7 +262,7 @@ function main(shaders)
             data.push(0.0);
 
             // life
-            const life = 2.0;
+            const life = 0.1;
             data.push(life);
 
 
@@ -274,14 +270,13 @@ function main(shaders)
 
             //ver donuts
             let angle = (Math.random() * 2.0 - 1.0) * Math.PI;
-            let velocity = Math.random() * (0.9 - 0.1) + 0.1;
-
+            let velocity = Math.random() * 10.0;
             data.push(velocity * Math.cos(angle));
             
             data.push(velocity * Math.sin(angle));
         }
-        counterField--;
-        counterParticles--;
+        counter--;
+
         uPosition.splice(randomPlanetIndex, 1);
         uRadius.splice(randomPlanetIndex, 1);
 
@@ -338,13 +333,13 @@ function main(shaders)
         gl.uniform1f(uLifeMax, lifeMax);
         gl.uniform1f(uVelocityMin, velocityMin);
         gl.uniform1f(uVelocityMax, velocityMax);
-        gl.uniform1i(uCounter, counterParticles);
+        gl.uniform1i(uCounter, counter);
         gl.uniform1f(uAngleDirect, angleDirect);
         gl.uniform1f(uAngle, angle);
         gl.uniform1f(uInvert, invert);
      
         
-        for(let i=0; i<counterField; i++) {
+        for(let i=0; i<counter; i++) {
             // Get the location of the uniforms...
             const a = gl.getUniformLocation(updateProgram, "uPosition[" + i + "]");
             const b = gl.getUniformLocation(updateProgram, "uRadius[" + i + "]");
@@ -395,9 +390,9 @@ function main(shaders)
         const uScale = gl.getUniformLocation(fieldProgram, "uScale");
         const uCounter = gl.getUniformLocation(fieldProgram, "uCounter");
         gl.uniform2f(uScale, 1.5, 1.5 * canvas.height / canvas.width);
-        gl.uniform1i(uCounter, counterField);
+        gl.uniform1i(uCounter, counter);
 
-        for(let i=0; i<counterField; i++) {
+        for(let i=0; i<counter; i++) {
             // Get the location of the uniforms...
             const a = gl.getUniformLocation(fieldProgram, "uPosition[" + i + "]");
             const b = gl.getUniformLocation(fieldProgram, "uRadius[" + i + "]");
