@@ -72,9 +72,7 @@ void main() {
    vPositionOut = vPosition + vVelocity * uDeltaTime;
    vAgeOut = vAge + uDeltaTime;
    vLifeOut = rand(vPosition * uDeltaTime) * (uLifeMax - uLifeMin) + uLifeMin;
-   vVelocityOut = vVelocity+ net_force(vPosition) * uDeltaTime;  
-
-      
+   vVelocityOut = vVelocity+ net_force(vPosition) * uDeltaTime;     
       
    if (vAgeOut >= vLife) {
       vAgeOut = 0.0;

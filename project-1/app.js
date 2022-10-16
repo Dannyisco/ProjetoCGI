@@ -37,7 +37,6 @@ let velocityMin = 0.1;
 let velocityMax = 0.2;
 let angleDirect = 0.0;
 let angle = Math.PI;
-
 let invert = 1;
 
 let time = undefined;
@@ -145,8 +144,6 @@ function main(shaders)
         }
     })
     
-
-    //enquanto desenha se exerce força..
     canvas.addEventListener("mousedown", function(event) {
         let initialPos= getCursorPosition(canvas, event);
         
@@ -258,10 +255,7 @@ function main(shaders)
             const life = 0.1;
             data.push(life);
 
-
             // velocity
-
-            //ver donuts
             let angle = (Math.random() * 2.0 - 1.0) * Math.PI;
             let velocity = Math.random() * 10.0;
             data.push(velocity * Math.cos(angle));

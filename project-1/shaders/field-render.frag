@@ -12,9 +12,6 @@ uniform float uRadius[MAX_PLANETS];
 uniform vec2 uPosition[MAX_PLANETS];
 uniform int uCounter;
 
-
-
-
 vec3 hsv2rgb(vec3 c)
 {
     vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
@@ -50,6 +47,4 @@ void main() {
          if (mod(log(intensity), 0.6) < 0.3 && mod(log(intensity), 0.6) > 0.2)
             gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
       }
-   
-
 }
