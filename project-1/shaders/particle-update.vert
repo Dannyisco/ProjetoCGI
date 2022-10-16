@@ -55,9 +55,7 @@ vec2 net_force(vec2 fPosition) {
 
       vec2 r = uPosition[i] - fPosition;
       highp float distance = length(r)*RE;
-      highp float mass = 0.0;
-
-      mass = 4.0 * 3.1415 * pow(uRadius[i], 3.0) * DENSITY / 3.0;
+      highp float mass = 4.0 * 3.1415 * pow(uRadius[i], 3.0) * DENSITY / 3.0;
          
       gfSum += normalize(r) * G_CONSTANT * mass / (pow(distance, 2.0));
    }
