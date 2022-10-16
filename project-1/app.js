@@ -91,20 +91,16 @@ function main(shaders)
                     velocityMax -= INCVLCTY;
                 break;
             case "ArrowUp":
-                if(angle - TEN_DEGREES > 0.0 ){
+                if(angle - TEN_DEGREES > 0.0 )
                     angle -= TEN_DEGREES;
-                }
-                else{
+                else
                     angle = 0.0;
-                }
                 break;
             case "ArrowDown":
-                if(angle + TEN_DEGREES < Math.PI){
+                if(angle + TEN_DEGREES < Math.PI)
                         angle += TEN_DEGREES; 
-                }
-                 else{
+                 else
                         angle = Math.PI;
-                }
                 break;      
             case "ArrowLeft":
                 angleDirect+=TEN_DEGREES;
@@ -383,7 +379,7 @@ function main(shaders)
 
         gl.useProgram(fieldProgram);
 
-        // Setup Uniform
+        // Setup Uniforms
         const uScale = gl.getUniformLocation(fieldProgram, "uScale");
         const uCounter = gl.getUniformLocation(fieldProgram, "uCounter");
         gl.uniform2f(uScale, 1.5, 1.5 * canvas.height / canvas.width);
