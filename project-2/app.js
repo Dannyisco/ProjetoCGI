@@ -80,13 +80,7 @@ function setup(shaders)
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mModelView"), false, flatten(modelView()));
     }
 
-    function blade()
-    {
-        multRotationZ(-90);
-        multScale([0.1, 0.5, 0.01]);
-        uploadModelView();
-        PYRAMID.draw(gl, program, mode);
-    }
+   
 
     function render()
     {
@@ -104,14 +98,74 @@ function setup(shaders)
         helicopter();
     }
 
+    function cabin() {
+        multTranslation([0.0, -0.25, 0.0])
+        multScale([0.65, 0.35, 0.3]);
+        uploadModelView();
+        SPHERE.draw(gl, program, mode);
+    }
+    
+    function tailCone() {
+        multTranslation([0.0, -0.12, 0.0])
+        multScale([0.90, 0.10, 0.08]);
+        multTranslation([0.5, -0.5, 0.0]);
+        uploadModelView();
+        SPHERE.draw(gl, program, mode);
+    }
+    
+    function tailFin() {
+        multTranslation([0.83, -0.17, 0.0])
+        multRotationZ(70);
+        multScale([0.2, 0.10, 0.08]);
+        multTranslation([0.5, -0.5, 0.0]);
+
+        uploadModelView();
+        SPHERE.draw(gl, program, mode);
+    }
+
+    function blade()
+    {
+        multTranslation([0.35, 0.0, 0.0])
+        multRotationZ(-90);
+        multScale([0.02, 0.7, 0.02]);
+        uploadModelView();
+        SPHERE.draw(gl, program, mode);
+    }
+
+    function blades() {
+        pushMatrix();
+            multRotationY(120);
+            blade();
+        popMatrix();
+        pushMatrix()
+            multRotationY(240);
+            blade();
+        popMatrix();
+        pushMatrix();
+            blade();
+        popMatrix();
+    }
+
     function helicopter() {
         pushMatrix();
-            multTranslation([0.0, 0.0, 0.0])
             multRotationY(360*time);
-            blade();
+            blades();
+        popMatrix();
+
+        pushMatrix();
+            cabin();
+        popMatrix();
+
+        pushMatrix();
+            tailCone();
+        popMatrix();
+
+        pushMatrix();
+            tailFin();
         popMatrix();
 
     }
+
 
 }
 
