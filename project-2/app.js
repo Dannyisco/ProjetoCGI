@@ -58,6 +58,7 @@ function setup(shaders)
     SPHERE.init(gl);
     CUBE.init(gl);
     CYLINDER.init(gl);
+    BUNNY.init(gl);
     gl.enable(gl.DEPTH_TEST);   // Enables Z-buffer depth test
     
     window.requestAnimationFrame(render);
@@ -105,9 +106,8 @@ function setup(shaders)
 
     function helicopter() {
         pushMatrix();
-            multTranslation([-0.25, 0.0, 0.0])
+            multTranslation([0.0, 0.0, 0.0])
             multRotationY(360*time);
-            blade();
             blade();
         popMatrix();
 
