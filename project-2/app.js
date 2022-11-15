@@ -92,7 +92,7 @@ function setup(shaders)
     
     
 
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clearColor(0.3, 0.51, 0.82, 1.0);
     PYRAMID.init(gl);
     SPHERE.init(gl);
     CUBE.init(gl);
@@ -143,8 +143,7 @@ function setup(shaders)
 
         
 
-        pushMatrix();
-           
+        pushMatrix();  
             multRotationY(360 * time * 0.05);
             multTranslation([0.22+distance, 0.06+height, 0.0]);
             multRotationX(-inclination);
@@ -153,7 +152,7 @@ function setup(shaders)
             helicopter();
         popMatrix();
 
-        gl.uniform3fv(uColor, vec3(0.0, 0.0, 1.0));
+        gl.uniform3fv(uColor, vec3(0.16, 0.55, 0.18));
         background();
     }
 
