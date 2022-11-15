@@ -15,6 +15,9 @@ let time = 0;           // Global simulation time in days
 let speed = 0.005;     // Speed (how many days added to time on each render pass
 let mode;               // Drawing mode (gl.LINES or gl.TRIANGLES)
 let animation = true;   // Animation is running
+let ex = 0;
+let ey = 0;
+let ez = 1;
 
 
 function setup(shaders)
@@ -50,8 +53,29 @@ function setup(shaders)
             case '-':
                 if(animation) speed /= 1.1;
                 break;
-        }
-    }
+            case "ArrowUp":
+                ey -= 0.02;
+            break;
+            case "ArrowDown":
+                ey += 0.02;
+            break;
+            case "ArrowLeft":
+                ex -= 0.02;
+                break;
+            case "ArrowRight":
+                ex += 0.02;
+            break;
+            case "a":
+                ez -= 0.02;
+            break;
+            case "d":
+                ez += 0.02;
+            break;
+         }
+                };
+
+    
+    
 
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     PYRAMID.init(gl);
@@ -62,6 +86,8 @@ function setup(shaders)
     gl.enable(gl.DEPTH_TEST);   // Enables Z-buffer depth test
     
     window.requestAnimationFrame(render);
+
+
 
 
     function resize_canvas(event)
@@ -93,20 +119,20 @@ function setup(shaders)
         
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"), false, flatten(mProjection));
     
-        loadMatrix(lookAt([0,0,1], [0,0,0], [0,1,0]));
+        loadMatrix(lookAt([ex,ey,ez], [0,0,0], [0,1,0]));
 
         helicopter();
     }
 
     function cabin() {
-        multTranslation([0.0, -0.25, 0.0])
+        multTranslation([0.0, -0.25, 0.0]);
         multScale([0.65, 0.35, 0.3]);
         uploadModelView();
         SPHERE.draw(gl, program, mode);
     }
     
     function tailCone() {
-        multTranslation([0.0, -0.12, 0.0])
+        multTranslation([0.0, -0.12, 0.0]);
         multScale([0.90, 0.10, 0.08]);
         multTranslation([0.5, -0.5, 0.0]);
         uploadModelView();
@@ -114,7 +140,7 @@ function setup(shaders)
     }
     
     function tailFin() {
-        multTranslation([0.83, -0.17, 0.0])
+        multTranslation([0.83, -0.17, 0.0]);
         multRotationZ(70);
         multScale([0.2, 0.10, 0.08]);
         multTranslation([0.5, -0.5, 0.0]);
@@ -123,32 +149,103 @@ function setup(shaders)
         SPHERE.draw(gl, program, mode);
     }
 
-    function blade()
-    {
-        multTranslation([0.35, 0.0, 0.0])
+
+    function landingSkids(){
+        pushMatrix();
+            multTranslation([0.0, -0.6, 0.2])
+            landingSkid();
+        popMatrix();
+        pushMatrix()
+            multTranslation([0.0, -0.6, -0.2])
+            landingSkid();
+        popMatrix();
+    }
+
+    function landingSkid(){
         multRotationZ(-90);
+        multScale([0.03, 0.6, 0.02]);
+        uploadModelView();
+        CYLINDER.draw(gl, program, mode);
+    }
+
+    function blades() {
+        
+        pushMatrix();
+            multRotationY(360*time);
+            multRotationY(120);
+            topBlade();
+        popMatrix();
+        pushMatrix()
+            multRotationY(360*time);
+            multRotationY(240);
+            topBlade();
+        popMatrix();
+        pushMatrix();
+            multRotationY(360*time);
+            topBlade();
+        popMatrix();
+        pushMatrix();
+            multTranslation([0.91, -0.1, 0.05]);
+            multRotationZ(360*time);
+            multRotationY(180);
+            rearBlade();
+        popMatrix();
+        pushMatrix();
+            multTranslation([0.91, -0.1, 0.05]);
+            multRotationZ(360*time);
+            rearBlade();
+        popMatrix();
+    }
+
+    function topBlade()
+    {
+        multTranslation([0.35, -0.04, 0.0]);
+        multRotationZ(90);
         multScale([0.02, 0.7, 0.02]);
         uploadModelView();
         SPHERE.draw(gl, program, mode);
     }
 
-    function blades() {
+    function rearBlade(){
+        multTranslation([0.1, 0.0, 0.0]);
+        multRotationZ(90);
+        multScale([0.04, 0.2, 0.01]);
+        uploadModelView();
+        SPHERE.draw(gl, program, mode);
+    }
+
+    function mast(){
+        multScale([0.03, 0.09, 0.03]);
+        uploadModelView();
+        CYLINDER.draw(gl, program, mode);
+    }
+
+    function landingSkidSuporter(){
+        multRotationZ(48);
+        multTranslation([-0.5, -0.03, 0.2]);
+        multScale([0.03, 0.09, 0.03]);
+        uploadModelView();
+        CUBE.draw(gl, program, mode);
+    }
+
+    function masts(){
         pushMatrix();
-            multRotationY(120);
-            blade();
-        popMatrix();
-        pushMatrix()
-            multRotationY(240);
-            blade();
+            multRotationY(360*time);
+            multTranslation([0.0, -0.06, 0.0]);
+            mast();
         popMatrix();
         pushMatrix();
-            blade();
+            multRotationX(90);
+            multTranslation([0.91, 0.04, 0.1]);
+            multRotationY(360*time);
+            mast();
         popMatrix();
     }
 
+
+
     function helicopter() {
         pushMatrix();
-            multRotationY(360*time);
             blades();
         popMatrix();
 
@@ -164,10 +261,23 @@ function setup(shaders)
             tailFin();
         popMatrix();
 
+        pushMatrix();
+            landingSkids();
+        popMatrix();
+
+        //pushMatrix();
+            //landingSkidSuporter();
+        //popMatrix();
+
+        pushMatrix();
+            masts();
+        popMatrix();
+
+
     }
 
 
-}
 
+}
 const urls = ["shader.vert", "shader.frag"];
 loadShadersFromURLS(urls).then(shaders => setup(shaders))
