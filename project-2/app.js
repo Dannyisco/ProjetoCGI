@@ -1,5 +1,5 @@
 import { buildProgramFromSources, loadShadersFromURLS, setupWebGL } from "../../libs/utils.js";
-import { ortho, lookAt, flatten } from "../../libs/MV.js";
+import { ortho, lookAt, flatten, vec3 } from "../../libs/MV.js";
 import {modelView, loadMatrix, multRotationX, multRotationY, multRotationZ, multScale, pushMatrix, popMatrix, multTranslation } from "../../libs/stack.js";
 
 import * as SPHERE from '../../libs/objects/sphere.js';
@@ -12,13 +12,15 @@ import * as BUNNY from '../../libs/objects/bunny.js';
 let gl;
 
 let time = 0;           // Global simulation time in days
-let speed = 0.005;     // Speed (how many days added to time on each render pass
+let speed = 0.0;     // Speed (how many days added to time on each render pass
 let mode;               // Drawing mode (gl.LINES or gl.TRIANGLES)
 let animation = true;   // Animation is running
 let ex = 0;
 let ey = 0;
 let ez = 1;
-
+let height = 0;
+let distance = 0;
+let inclination = 0;
 
 function setup(shaders)
 {
@@ -47,32 +49,45 @@ function setup(shaders)
             case 'p':
                 animation = !animation;
                 break;
-            case '+':
-                if(animation) speed *= 1.1;
-                break;
-            case '-':
-                if(animation) speed /= 1.1;
+            case "ArrowLeft":
+                
                 break;
             case "ArrowUp":
-                ey -= 0.02;
-            break;
-            case "ArrowDown":
-                ey += 0.02;
-            break;
-            case "ArrowLeft":
-                ex -= 0.02;
+                if(height < 0.6){
+                    height += 0.01;
+                    speed += 0.01;
+                    inclination += 0.5
+                }
                 break;
-            case "ArrowRight":
-                ex += 0.02;
-            break;
-            case "a":
-                ez -= 0.02;
-            break;
-            case "d":
-                ez += 0.02;
-            break;
+            case "ArrowDown":
+                if(height > 0) {
+                    height -= 0.01;
+                    speed -= 0.01;
+                    inclination -= 0.5
+                }
+                break;
+            case "1":
+                ex = 1;
+                ey = 1;
+                ez = 1;  
+                break;
+            case "2":
+                ex = -1;
+                ey = 0;
+                ez = 0;  
+                break;
+            case "3":
+                ex = 0.2;
+                ey = 2.2;
+                ez = 0;   
+                break;
+            case "4":
+                ex = 0;
+                ey = 0;
+                ez = -1; 
+                break;
          }
-                };
+    };
 
     
     
@@ -111,6 +126,8 @@ function setup(shaders)
     function render()
     {
         if(animation) time += speed;
+        if(height == 0)
+            speed = 0;
         window.requestAnimationFrame(render);
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -121,7 +138,23 @@ function setup(shaders)
     
         loadMatrix(lookAt([ex,ey,ez], [0,0,0], [0,1,0]));
 
-        helicopter();
+        const uColor = gl.getUniformLocation(program, "uColor");
+        gl.uniform3fv(uColor, vec3(1.0, 0.0, 0.0));
+
+        
+
+        pushMatrix();
+           
+            multRotationY(360 * time * 0.05);
+            multTranslation([0.22+distance, 0.06+height, 0.0]);
+            multRotationX(-inclination);
+            multRotationY(-90);
+            multScale([0.1,0.1,0.1]);
+            helicopter();
+        popMatrix();
+
+        gl.uniform3fv(uColor, vec3(0.0, 0.0, 1.0));
+        background();
     }
 
     function cabin() {
@@ -159,6 +192,33 @@ function setup(shaders)
             multTranslation([0.0, -0.6, -0.2])
             landingSkid();
         popMatrix();
+        pushMatrix();
+            multTranslation([-0.12, -0.43, 0.1]);
+            multRotationX(-30);
+            multRotationZ(55);
+            landingSkidSuporter();
+        popMatrix();
+        pushMatrix();
+            multTranslation([0.12, -0.43, 0.1]);
+            multRotationX(-30);
+            multRotationZ(-55);
+            landingSkidSuporter();
+        popMatrix();
+        pushMatrix();
+            multRotationY(180);
+            multTranslation([-0.12, -0.43, 0.1]);
+            multRotationX(-30);
+            multRotationZ(55);
+            landingSkidSuporter();
+        popMatrix();
+        pushMatrix();
+            multRotationY(180);
+            multTranslation([0.12, -0.43, 0.1]);
+            multRotationX(-30);
+            multRotationZ(-55);
+            landingSkidSuporter();
+        popMatrix();
+        
     }
 
     function landingSkid(){
@@ -168,8 +228,15 @@ function setup(shaders)
         CYLINDER.draw(gl, program, mode);
     }
 
-    function blades() {
+    
+    function landingSkidSuporter(){
         
+        multScale([0.48, 0.025, 0.020]);
+        uploadModelView();
+        CUBE.draw(gl, program, mode);
+    }
+
+    function blades() {
         pushMatrix();
             multRotationY(360*time);
             multRotationY(120);
@@ -220,13 +287,6 @@ function setup(shaders)
         CYLINDER.draw(gl, program, mode);
     }
 
-    function landingSkidSuporter(){
-        multRotationZ(48);
-        multTranslation([-0.5, -0.03, 0.2]);
-        multScale([0.03, 0.09, 0.03]);
-        uploadModelView();
-        CUBE.draw(gl, program, mode);
-    }
 
     function masts(){
         pushMatrix();
@@ -265,17 +325,24 @@ function setup(shaders)
             landingSkids();
         popMatrix();
 
-        //pushMatrix();
-            //landingSkidSuporter();
-        //popMatrix();
-
         pushMatrix();
             masts();
         popMatrix();
 
-
     }
 
+    function background() {
+        pushMatrix();
+            plane();
+        popMatrix();
+    }
+
+    function plane(){
+        multTranslation([0.0, -0.005, 0.0]);
+        multScale([2.0, 0.01, 2.0]);
+        uploadModelView();
+        CUBE.draw(gl, program, mode);
+    }
 
 
 }
