@@ -18,9 +18,36 @@ let animation = true;   // Animation is running
 let ex = 0;
 let ey = 0;
 let ez = 1;
-let height = 0;
-let distance = 0;
+let height = 0; 
 let inclination = 0;
+
+const CABIN_LENGTH = 0.65;
+const CABIN_WIDTH = 0.3;
+const CABIN_HEIGHT = 0.35;
+
+const TAIL_CONE_LENGTH = 0.9;
+const TAIL_FIN_LENGTH = 0.2;
+const TAIL_WIDTH = 0.08;
+const TAIL_HEIGHT = 0.1;
+
+const LANDING_SKID_WIDTH = 0.03;
+const LANDING_SKID_HEIGHT = 0.03;
+
+const SKID_SUPPORTER_LENGTH = 0.63;
+const SKID_SUPPORTER_HEIGHT = 0.025;
+const SKID_SUPPORTER_WIDTH = 0.03;
+
+const REAR_BLADE_LENGTH = 0.2;
+const REAR_BLADE_HEIGHT = 0.04;
+const REAR_BLADE_WIDTH = 0.01;
+
+const TOP_BLADE_LENGTH = 0.7;
+const TOP_BLADE_HEIGHT = 0.02;
+const TOP_BLADE_WIDTH = 0.02;
+
+const MAST_LENGTH = 0.03;
+const MAST_HEIGHT = 0.09;
+const MAST_WIDTH = 0.03;
 
 function setup(shaders)
 {
@@ -53,22 +80,22 @@ function setup(shaders)
                 
                 break;
             case "ArrowUp":
-                if(height < 0.6){
-                    height += 0.01;
-                    speed += 0.01;
+                if(height < 6.0){
+                    height += 0.1;
+                    speed += 0.005;
                     inclination += 0.5
                 }
                 break;
             case "ArrowDown":
                 if(height > 0) {
-                    height -= 0.01;
-                    speed -= 0.01;
+                    height -= 0.1;
+                    speed -= 0.005;
                     inclination -= 0.5
                 }
                 break;
             case "1":
                 ex = 1;
-                ey = 1;
+                ey = 0.5;
                 ez = 1;  
                 break;
             case "2":
@@ -102,9 +129,6 @@ function setup(shaders)
     
     window.requestAnimationFrame(render);
 
-
-
-
     function resize_canvas(event)
     {
         canvas.width = window.innerWidth;
@@ -120,8 +144,6 @@ function setup(shaders)
     {
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mModelView"), false, flatten(modelView()));
     }
-
-   
 
     function render()
     {
@@ -139,44 +161,39 @@ function setup(shaders)
         loadMatrix(lookAt([ex,ey,ez], [0,0,0], [0,1,0]));
 
         const uColor = gl.getUniformLocation(program, "uColor");
-        gl.uniform3fv(uColor, vec3(1.0, 0.0, 0.0));
-
-        
+        gl.uniform3fv(uColor, vec3(0.98, 0.31, 0.09));
 
         pushMatrix();  
             multRotationY(360 * time * 0.05);
-            multTranslation([0.22+distance, 0.06+height, 0.0]);
+            multScale([0.1,0.1,0.1]);
+            multTranslation([(CABIN_LENGTH + TAIL_CONE_LENGTH)*3, (CABIN_HEIGHT+0.07) + height, 0.0]);
             multRotationX(-inclination);
             multRotationY(-90);
-            multScale([0.1,0.1,0.1]);
             helicopter();
         popMatrix();
 
         gl.uniform3fv(uColor, vec3(0.16, 0.55, 0.18));
         background();
+
     }
 
     function cabin() {
-        multTranslation([0.0, -0.25, 0.0]);
-        multScale([0.65, 0.35, 0.3]);
+        multScale([CABIN_LENGTH, CABIN_HEIGHT, CABIN_WIDTH]);
         uploadModelView();
         SPHERE.draw(gl, program, mode);
     }
     
     function tailCone() {
-        multTranslation([0.0, -0.12, 0.0]);
-        multScale([0.90, 0.10, 0.08]);
-        multTranslation([0.5, -0.5, 0.0]);
+        multTranslation([TAIL_CONE_LENGTH/2 + CABIN_LENGTH/2 - 0.2, CABIN_HEIGHT/4, 0.0]);
+        multScale([TAIL_CONE_LENGTH, TAIL_HEIGHT, TAIL_WIDTH]);
         uploadModelView();
         SPHERE.draw(gl, program, mode);
     }
     
     function tailFin() {
-        multTranslation([0.83, -0.17, 0.0]);
+        multTranslation([TAIL_CONE_LENGTH + CABIN_LENGTH/2 - 0.2, CABIN_HEIGHT/4 + 0.07, 0.0]);
         multRotationZ(70);
-        multScale([0.2, 0.10, 0.08]);
-        multTranslation([0.5, -0.5, 0.0]);
-
+        multScale([TAIL_FIN_LENGTH, TAIL_WIDTH, TAIL_HEIGHT]);
         uploadModelView();
         SPHERE.draw(gl, program, mode);
     }
@@ -184,104 +201,104 @@ function setup(shaders)
 
     function landingSkids(){
         pushMatrix();
-            multTranslation([0.0, -0.6, 0.2])
+            multRotationY(180);
             landingSkid();
         popMatrix();
         pushMatrix()
-            multTranslation([0.0, -0.6, -0.2])
             landingSkid();
         popMatrix();
-        pushMatrix();
-            multTranslation([-0.12, -0.43, 0.1]);
-            multRotationX(-30);
-            multRotationZ(55);
-            landingSkidSuporter();
-        popMatrix();
-        pushMatrix();
-            multTranslation([0.12, -0.43, 0.1]);
-            multRotationX(-30);
-            multRotationZ(-55);
-            landingSkidSuporter();
-        popMatrix();
-        pushMatrix();
-            multRotationY(180);
-            multTranslation([-0.12, -0.43, 0.1]);
-            multRotationX(-30);
-            multRotationZ(55);
-            landingSkidSuporter();
-        popMatrix();
-        pushMatrix();
-            multRotationY(180);
-            multTranslation([0.12, -0.43, 0.1]);
-            multRotationX(-30);
-            multRotationZ(-55);
-            landingSkidSuporter();
-        popMatrix();
-        
     }
 
     function landingSkid(){
+        multTranslation([0.0, -CABIN_HEIGHT - 0.07, CABIN_WIDTH])
+        multScale([CABIN_LENGTH + 0.2, LANDING_SKID_HEIGHT , LANDING_SKID_WIDTH]);
         multRotationZ(-90);
-        multScale([0.03, 0.6, 0.02]);
         uploadModelView();
         CYLINDER.draw(gl, program, mode);
     }
 
+    function landingSkidSupporters() {
+        pushMatrix();
+            left();
+        popMatrix(); 
+
+        pushMatrix();
+            multRotationY(180);
+            left();
+        popMatrix(); 
+        
+    }
+    
+    function left() {
+        pushMatrix();
+            landingSkidSuporter();
+        popMatrix(); 
+    
+        pushMatrix();
+            multRotationZ(82);
+            landingSkidSuporter();
+        popMatrix(); 
+    }
     
     function landingSkidSuporter(){
-        
-        multScale([0.48, 0.025, 0.020]);
+        multRotationX(-36);
+        multRotationZ(55);
+        multTranslation([-SKID_SUPPORTER_LENGTH/2, 0.0, 0.0]);
+        multScale([SKID_SUPPORTER_LENGTH, SKID_SUPPORTER_HEIGHT, SKID_SUPPORTER_WIDTH]);
         uploadModelView();
         CUBE.draw(gl, program, mode);
     }
 
     function blades() {
+        
         pushMatrix();
             multRotationY(360*time);
             multRotationY(120);
             topBlade();
         popMatrix();
+
         pushMatrix()
             multRotationY(360*time);
             multRotationY(240);
             topBlade();
         popMatrix();
+
         pushMatrix();
             multRotationY(360*time);
             topBlade();
         popMatrix();
+        
         pushMatrix();
-            multTranslation([0.91, -0.1, 0.05]);
+            multTranslation([TAIL_CONE_LENGTH + REAR_BLADE_LENGTH/2 + 0.02, TAIL_HEIGHT + REAR_BLADE_HEIGHT, TAIL_WIDTH]);
             multRotationZ(360*time);
             multRotationY(180);
             rearBlade();
         popMatrix();
+        
         pushMatrix();
-            multTranslation([0.91, -0.1, 0.05]);
+            multTranslation([TAIL_CONE_LENGTH + REAR_BLADE_LENGTH/2 + 0.02, TAIL_HEIGHT + REAR_BLADE_HEIGHT, TAIL_WIDTH]);
             multRotationZ(360*time);
             rearBlade();
         popMatrix();
     }
 
-    function topBlade()
-    {
-        multTranslation([0.35, -0.04, 0.0]);
-        multRotationZ(90);
-        multScale([0.02, 0.7, 0.02]);
+    function topBlade(){
+        multTranslation([TOP_BLADE_LENGTH/2, CABIN_HEIGHT/2 + TOP_BLADE_HEIGHT + 0.02, 0.0]);
+        multScale([TOP_BLADE_LENGTH, TOP_BLADE_HEIGHT, TOP_BLADE_WIDTH]);
         uploadModelView();
         SPHERE.draw(gl, program, mode);
     }
 
     function rearBlade(){
-        multTranslation([0.1, 0.0, 0.0]);
-        multRotationZ(90);
-        multScale([0.04, 0.2, 0.01]);
+   
+        multTranslation([REAR_BLADE_LENGTH/2,0,0]);
+        multScale([REAR_BLADE_LENGTH, REAR_BLADE_HEIGHT, REAR_BLADE_WIDTH]);
         uploadModelView();
         SPHERE.draw(gl, program, mode);
     }
 
     function mast(){
-        multScale([0.03, 0.09, 0.03]);
+        multScale([MAST_LENGTH, MAST_HEIGHT, MAST_WIDTH]);
         uploadModelView();
         CYLINDER.draw(gl, program, mode);
     }
@@ -290,12 +307,13 @@ function setup(shaders)
     function masts(){
         pushMatrix();
             multRotationY(360*time);
-            multTranslation([0.0, -0.06, 0.0]);
+            multTranslation([0.0, CABIN_HEIGHT/2 + 0.02, 0.0]);
             mast();
         popMatrix();
+        
         pushMatrix();
-            multRotationX(90);
-            multTranslation([0.91, 0.04, 0.1]);
+            multTranslation([TAIL_CONE_LENGTH + REAR_BLADE_LENGTH/2 + 0.02, TAIL_HEIGHT + REAR_BLADE_HEIGHT, TAIL_WIDTH/2]);
+            multRotationX(90)
             multRotationY(360*time);
             mast();
         popMatrix();
@@ -325,9 +343,13 @@ function setup(shaders)
         popMatrix();
 
         pushMatrix();
-            masts();
+            landingSkidSupporters();
         popMatrix();
 
+        pushMatrix();
+            masts();
+        popMatrix();
+        
     }
 
     function background() {
@@ -338,11 +360,10 @@ function setup(shaders)
 
     function plane(){
         multTranslation([0.0, -0.005, 0.0]);
-        multScale([2.0, 0.01, 2.0]);
+        multScale([2.2, 0.01, 2.2]);
         uploadModelView();
         CUBE.draw(gl, program, mode);
     }
-
 
 }
 const urls = ["shader.vert", "shader.frag"];
