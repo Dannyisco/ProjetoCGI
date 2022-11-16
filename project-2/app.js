@@ -20,6 +20,7 @@ let ey = 0;
 let ez = 1;
 let height = 0; 
 let inclination = 0;
+let leftw = 0.0;
 
 const CABIN_LENGTH = 0.65;
 const CABIN_WIDTH = 0.3;
@@ -65,6 +66,14 @@ function setup(shaders)
     resize_canvas();
     window.addEventListener("resize", resize_canvas);
 
+    document.onkeyup = function(event) {
+        switch(event.key) {
+            case "ArrowLeft":
+                leftw = 0.0;
+                break;
+        }
+    }
+
     document.onkeydown = function(event) {
         switch(event.key) {
             case 'w':
@@ -77,7 +86,7 @@ function setup(shaders)
                 animation = !animation;
                 break;
             case "ArrowLeft":
-                
+                 leftw= 0.05;
                 break;
             case "ArrowUp":
                 if(height < 6.0){
@@ -92,6 +101,17 @@ function setup(shaders)
                     speed -= 0.005;
                     inclination -= 0.5
                 }
+
+                /*Sobe com inclinação 0 e sem andar às voltas
+                premindo left vai pra esquerda e com inclinação dependendo da velocidade
+                larga-se o left e para de andar às voltas com a inclinação voltando lentamente ao 0.
+
+                Acho q a velocidade nn depende da altura
+
+                Quando está no solo e premimos cursorUp é suposto nao descolar logo e ver as helices a girar
+                até uma determinada velocidade e só depois descolar.
+                Ao tocar o solo na descida as helices devem parar de girar lentamente.
+                */
                 break;
             case "1":
                 ex = 1;
@@ -164,7 +184,7 @@ function setup(shaders)
         gl.uniform3fv(uColor, vec3(0.98, 0.31, 0.09));
 
         pushMatrix();  
-            multRotationY(360 * time * 0.05);
+            multRotationY(360 * time * leftw);
             multScale([0.1,0.1,0.1]);
             multTranslation([(CABIN_LENGTH + TAIL_CONE_LENGTH)*3, (CABIN_HEIGHT+0.07) + height, 0.0]);
             multRotationX(-inclination);
@@ -322,10 +342,12 @@ function setup(shaders)
 
 
     function helicopter() {
+       // const uColor = gl.getUniformLocation(program, "uColor");
         pushMatrix();
             blades();
         popMatrix();
-
+        
+        //gl.uniform3fv(uColor, vec3(0.0, 1, 0.0));
         pushMatrix();
             cabin();
         popMatrix();
