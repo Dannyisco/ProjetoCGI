@@ -11,16 +11,17 @@ import * as BUNNY from '../../libs/objects/bunny.js';
 /** @type WebGLRenderingContext */
 let gl;
 
-let time = 0;           // Global simulation time in days
-let speed = 0.0;     // Speed (how many days added to time on each render pass
+let time = 0;     
+let speed = 0.0;
 let mode;               // Drawing mode (gl.LINES or gl.TRIANGLES)
 let animation = true;   // Animation is running
-let ex = 0;
-let ey = 0;
-let ez = 1;
+let zoom = 1.0;
 let height = 0; 
 let inclination = 0;
-let leftw = 0.0;
+let slow = false;
+
+const MAX_SPEED = 0.02;
+const MAX_ANGLE = 30;
 
 const CABIN_LENGTH = 0.65;
 const CABIN_WIDTH = 0.3;
@@ -55,13 +56,13 @@ function setup(shaders)
     let canvas = document.getElementById("gl-canvas");
     let aspect = canvas.width / canvas.height;
 
-    gl = setupWebGL(canvas);
+    gl = setupWebGL(canvas); 
+    mode = gl.TRIANGLES; 
 
     let program = buildProgramFromSources(gl, shaders["shader.vert"], shaders["shader.frag"]);
 
-    let mProjection = ortho(-aspect,aspect, -1, 1,-3,3);
-
-    mode = gl.TRIANGLES; 
+    let mProjection = ortho(-aspect*zoom,aspect*zoom, -zoom, zoom, 0.01, 10);
+    let mView = lookAt([3, 1.7, 3], [0, 0.6, 0], [0, 1, 0]);
 
     resize_canvas();
     window.addEventListener("resize", resize_canvas);
@@ -69,7 +70,7 @@ function setup(shaders)
     document.onkeyup = function(event) {
         switch(event.key) {
             case "ArrowLeft":
-                leftw = 0.0;
+                slow = true;
                 break;
         }
     }
@@ -86,23 +87,35 @@ function setup(shaders)
                 animation = !animation;
                 break;
             case "ArrowLeft":
-                 leftw= 0.05;
+                slow = false;
+                if(speed < MAX_SPEED && height > 0)
+                    speed += 0.0001;
                 break;
             case "ArrowUp":
-                if(height < 6.0){
+                if(height < 7.0){
                     height += 0.1;
-                    speed += 0.005;
-                    inclination += 0.5
                 }
                 break;
             case "ArrowDown":
-                if(height > 0) {
+                if(height > 0) 
                     height -= 0.1;
-                    speed -= 0.005;
-                    inclination -= 0.5
-                }
+                break;
+            case "1":
+                mView = lookAt([3, 1.7, 3], [0, 0.6, 0], [0, 1, 0]);
+                break;
+            case "2":
+                mView = lookAt([0,0.6,1], [0,0.6,0], [0,1,0]);
+                break;
+            case "3":
+                mView = lookAt([0,1.6,0],  [0,0.6,0], [0,0,-1]);
+                break;
+            case "4":
+                mView = lookAt([1, 0.6, 0.0], [0, 0.6, 0], [0, 1, 0]);
+                break;
+         }
+    };
 
-                /*Sobe com inclinação 0 e sem andar às voltas
+    /*Sobe com inclinação 0 e sem andar às voltas
                 premindo left vai pra esquerda e com inclinação dependendo da velocidade
                 larga-se o left e para de andar às voltas com a inclinação voltando lentamente ao 0.
 
@@ -112,34 +125,10 @@ function setup(shaders)
                 até uma determinada velocidade e só depois descolar.
                 Ao tocar o solo na descida as helices devem parar de girar lentamente.
                 */
-                break;
-            case "1":
-                ex = 1;
-                ey = 0.5;
-                ez = 1;  
-                break;
-            case "2":
-                ex = -1;
-                ey = 0;
-                ez = 0;  
-                break;
-            case "3":
-                ex = 0.2;
-                ey = 2.2;
-                ez = 0;   
-                break;
-            case "4":
-                ex = 0;
-                ey = 0;
-                ez = -1; 
-                break;
-         }
-    };
 
     
-    
-
     gl.clearColor(0.3, 0.51, 0.82, 1.0);
+
     PYRAMID.init(gl);
     SPHERE.init(gl);
     CUBE.init(gl);
@@ -157,7 +146,12 @@ function setup(shaders)
         aspect = canvas.width / canvas.height;
 
         gl.viewport(0,0,canvas.width, canvas.height);
-        mProjection = ortho(-aspect,aspect, -1, 1,-3,3);
+        mProjection = ortho(-aspect*zoom, aspect*zoom, -zoom, zoom, 0.01, 10);
+    }
+
+    function uploadProjection()
+    {
+        uploadMatrix("mProjection", mProjection);
     }
 
     function uploadModelView()
@@ -165,26 +159,36 @@ function setup(shaders)
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mModelView"), false, flatten(modelView()));
     }
 
+    function uploadMatrix(name, m) {
+        gl.uniformMatrix4fv(gl.getUniformLocation(program, name), false, flatten(m));
+    }
+
     function render()
     {
-        if(animation) time += speed;
-        if(height == 0)
-            speed = 0;
+        if(animation){
+            if(slow && speed >= 0.0001)
+                speed -= 0.0001;
+            time += speed;
+        } 
+
+        inclination = speed * MAX_ANGLE / MAX_SPEED;
+
         window.requestAnimationFrame(render);
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         
         gl.useProgram(program);
+
+        mProjection = ortho(-aspect*zoom,aspect*zoom, -zoom, zoom, 0.01, 10);
+        uploadProjection(mProjection);
         
-        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"), false, flatten(mProjection));
-    
-        loadMatrix(lookAt([ex,ey,ez], [0,0,0], [0,1,0]));
+        loadMatrix(mView);
 
         const uColor = gl.getUniformLocation(program, "uColor");
         gl.uniform3fv(uColor, vec3(0.98, 0.31, 0.09));
 
-        pushMatrix();  
-            multRotationY(360 * time * leftw);
+        pushMatrix();
+            multRotationY(360 * time);
             multScale([0.1,0.1,0.1]);
             multTranslation([(CABIN_LENGTH + TAIL_CONE_LENGTH)*3, (CABIN_HEIGHT+0.07) + height, 0.0]);
             multRotationX(-inclination);
