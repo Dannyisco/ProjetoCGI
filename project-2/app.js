@@ -11,16 +11,20 @@ import * as BUNNY from '../../libs/objects/bunny.js';
 /** @type WebGLRenderingContext */
 let gl;
 
-let time = 0;     
-let speed = 0.0;
+let helicopterSpeed = 0; 
+let bladeSpeed = 0;       
+let incHelicopter = 0.0;
+let incBlade = 0.0;
 let mode;               // Drawing mode (gl.LINES or gl.TRIANGLES)
 let animation = true;   // Animation is running
 let zoom = 1.0;
 let height = 0; 
 let inclination = 0;
-let slow = false;
+let slowHelicopter = false;
+let slowBlade = false;
 
-const MAX_SPEED = 0.02;
+
+const MAX_SPEED = 0.015;
 const MAX_ANGLE = 30;
 
 const CABIN_LENGTH = 0.65;
@@ -70,7 +74,7 @@ function setup(shaders)
     document.onkeyup = function(event) {
         switch(event.key) {
             case "ArrowLeft":
-                slow = true;
+                slowHelicopter = true;
                 break;
         }
     }
@@ -87,18 +91,29 @@ function setup(shaders)
                 animation = !animation;
                 break;
             case "ArrowLeft":
-                slow = false;
-                if(speed < MAX_SPEED && height > 0)
-                    speed += 0.0001;
+                slowHelicopter = false;
+
+                if(incHelicopter < MAX_SPEED && height > 0)
+                    incHelicopter += 0.0001;
+           
                 break;
             case "ArrowUp":
-                if(height < 7.0){
-                    height += 0.1;
+                if(height == 0 && incBlade <= 0.05)
+                    incBlade += 0.001;
+                else if(height < 7.0){
+                    height += 0.05;
                 }
                 break;
             case "ArrowDown":
-                if(height > 0) 
-                    height -= 0.1;
+                if(height >= 0.05) {
+                    height -= 0.05;
+                    
+                }
+                else {
+                    slowBlade = true;
+                    height = 0;
+                    sleep(2000).then(() => {slowBlade = false});
+                }
                 break;
             case "1":
                 mView = lookAt([3, 1.7, 3], [0, 0.6, 0], [0, 1, 0]);
@@ -149,6 +164,11 @@ function setup(shaders)
         mProjection = ortho(-aspect*zoom, aspect*zoom, -zoom, zoom, 0.01, 10);
     }
 
+    
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    
     function uploadProjection()
     {
         uploadMatrix("mProjection", mProjection);
@@ -163,15 +183,33 @@ function setup(shaders)
         gl.uniformMatrix4fv(gl.getUniformLocation(program, name), false, flatten(m));
     }
 
-    function render()
-    {
-        if(animation){
-            if(slow && speed >= 0.0001)
-                speed -= 0.0001;
-            time += speed;
+    function render() {
+        if(animation) {
+            if(slowHelicopter && incHelicopter >= 0.0001)
+                incHelicopter -= 0.0001;
+
+            if(slowBlade && incBlade >= 0.0005)
+                incBlade -= 0.0005;
         } 
 
-        inclination = speed * MAX_ANGLE / MAX_SPEED;
+        helicopterSpeed += incHelicopter;
+
+        if(height == 0) {
+            bladeSpeed += incBlade;
+            incHelicopter = 0;
+        }
+           
+        if(height > 0)
+            bladeSpeed += incBlade + incHelicopter;
+        
+        if(height <= 0.5) {
+            if(incHelicopter == 0)
+                inclination = 0
+            else
+                inclination -= inclination/(height/0.05)
+        }
+        else
+            inclination = incHelicopter * MAX_ANGLE / MAX_SPEED;
 
         window.requestAnimationFrame(render);
 
@@ -188,7 +226,7 @@ function setup(shaders)
         gl.uniform3fv(uColor, vec3(0.98, 0.31, 0.09));
 
         pushMatrix();
-            multRotationY(360 * time);
+            multRotationY(360 * helicopterSpeed);
             multScale([0.1,0.1,0.1]);
             multTranslation([(CABIN_LENGTH + TAIL_CONE_LENGTH)*3, (CABIN_HEIGHT+0.07) + height, 0.0]);
             multRotationX(-inclination);
@@ -276,32 +314,32 @@ function setup(shaders)
     function blades() {
         
         pushMatrix();
-            multRotationY(360*time);
+            multRotationY(360*bladeSpeed);
             multRotationY(120);
             topBlade();
         popMatrix();
 
         pushMatrix()
-            multRotationY(360*time);
+            multRotationY(360*bladeSpeed);
             multRotationY(240);
             topBlade();
         popMatrix();
 
         pushMatrix();
-            multRotationY(360*time);
+            multRotationY(360*bladeSpeed);
             topBlade();
         popMatrix();
         
         pushMatrix();
             multTranslation([TAIL_CONE_LENGTH + REAR_BLADE_LENGTH/2 + 0.02, TAIL_HEIGHT + REAR_BLADE_HEIGHT, TAIL_WIDTH]);
-            multRotationZ(360*time);
+            multRotationZ(360*bladeSpeed);
             multRotationY(180);
             rearBlade();
         popMatrix();
         
         pushMatrix();
             multTranslation([TAIL_CONE_LENGTH + REAR_BLADE_LENGTH/2 + 0.02, TAIL_HEIGHT + REAR_BLADE_HEIGHT, TAIL_WIDTH]);
-            multRotationZ(360*time);
+            multRotationZ(360*bladeSpeed);
             rearBlade();
         popMatrix();
     }
@@ -330,7 +368,7 @@ function setup(shaders)
 
     function masts(){
         pushMatrix();
-            multRotationY(360*time);
+            multRotationY(360*bladeSpeed);
             multTranslation([0.0, CABIN_HEIGHT/2 + 0.02, 0.0]);
             mast();
         popMatrix();
@@ -338,7 +376,7 @@ function setup(shaders)
         pushMatrix();
             multTranslation([TAIL_CONE_LENGTH + REAR_BLADE_LENGTH/2 + 0.02, TAIL_HEIGHT + REAR_BLADE_HEIGHT, TAIL_WIDTH/2]);
             multRotationX(90)
-            multRotationY(360*time);
+            multRotationY(360*bladeSpeed);
             mast();
         popMatrix();
     }
