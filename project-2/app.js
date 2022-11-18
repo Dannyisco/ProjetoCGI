@@ -1,5 +1,5 @@
 import { buildProgramFromSources, loadShadersFromURLS, setupWebGL } from "../../libs/utils.js";
-import { ortho, lookAt, flatten, vec3 } from "../../libs/MV.js";
+import { ortho, lookAt, flatten, vec3, mult, rotateX, rotateY } from "../../libs/MV.js";
 import {modelView, loadMatrix, multRotationX, multRotationY, multRotationZ, multScale, pushMatrix, popMatrix, multTranslation } from "../../libs/stack.js";
 
 import * as SPHERE from '../../libs/objects/sphere.js';
@@ -23,10 +23,12 @@ let height = 0;
 let inclination = 0;
 let slowHelicopter = false;
 let slowBlade = false;
+let theta = 30;
+let gama = 60;
 
+//duas rotacoes por segundo para helices
 
-
-const MAX_SPEED = 0.015;
+const MAX_SPEED = 0.008;
 const MAX_ANGLE = 30;
 
 const CABIN_LENGTH = 0.65;
@@ -67,8 +69,8 @@ function setup(shaders)
 
     let program = buildProgramFromSources(gl, shaders["shader.vert"], shaders["shader.frag"]);
 
-    let mProjection = ortho(-aspect*zoom,aspect*zoom, -zoom, zoom, 0.01, 10);
-    let mView = lookAt([3, 1.7, 3], [0, 0.6, 0], [0, 1, 0]);
+    let mProjection = ortho(-aspect*zoom,aspect*zoom, -zoom, zoom, -10, 10);
+    let mView = mult(lookAt([0,-3,4], [0,0.4,0], [0,1,0]), mult(rotateX(gama), rotateY(theta)));
 
     resize_canvas();
     window.addEventListener("resize", resize_canvas);
@@ -100,16 +102,13 @@ function setup(shaders)
            
                 break;
             case "ArrowUp":
-                if(height == 0 && incBlade <= 0.05)
-                    incBlade += 0.001;
-                else if(height < 7.0){
+                if(height < 3.0){
                     height += 0.05;
                 }
                 break;
             case "ArrowDown":
                 if(height >= 0.05) {
                     height -= 0.05;
-                    
                 }
                 else {
                     slowBlade = true;
@@ -118,7 +117,7 @@ function setup(shaders)
                 }
                 break;
             case "1":
-                mView = lookAt([3, 1.7, 3], [0, 0.6, 0], [0, 1, 0]);
+                mView = mult(lookAt([0,-3,4], [0,0.4,0], [0,1,0]), mult(rotateX(gama), rotateY(theta)));
                 break;
             case "2":
                 mView = lookAt([0,0.6,-1], [0,0.6,0], [0,1,0]);
@@ -197,13 +196,13 @@ function setup(shaders)
 
         helicopterSpeed += incHelicopter;
 
-        if(height == 0) {
-            bladeSpeed += incBlade;
+        if(height == 0) 
             incHelicopter = 0;
-        }
-           
+
         if(height > 0)
-            bladeSpeed += incBlade + incHelicopter;
+            incBlade = 0.05;
+     
+        bladeSpeed += incBlade + incHelicopter;
         
         if(height <= 0.5) {
             if(incHelicopter == 0)
@@ -231,16 +230,17 @@ function setup(shaders)
 
         pushMatrix();
             multRotationY(360 * helicopterSpeed);
-            multScale([0.1,0.1,0.1]);
+            multScale([0.2,0.2,0.2]);
             multTranslation([(CABIN_LENGTH + TAIL_CONE_LENGTH)*3, (CABIN_HEIGHT+0.07) + height, 0.0]);
             multRotationX(-inclination);
             multRotationY(-90);
             helicopter();
         popMatrix();
 
-        
-        background();
-
+        pushMatrix();
+            multScale([1.2, 1.2, 1.2]);
+            background();
+        popMatrix();
     }
 
     function cabin() {
