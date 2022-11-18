@@ -27,10 +27,6 @@ let theta = 30;
 let gama = 60;
 
 //duas rotacoes por segundo para helices
-
-const MAX_SPEED = 0.008;
-const MAX_ANGLE = 30;
-
 const CABIN_LENGTH = 0.65;
 const CABIN_WIDTH = 0.3;
 const CABIN_HEIGHT = 0.35;
@@ -40,6 +36,7 @@ const TAIL_FIN_LENGTH = 0.2;
 const TAIL_WIDTH = 0.08;
 const TAIL_HEIGHT = 0.1;
 
+const LANDING_SKID_LENGTH = CABIN_LENGTH + 0.2;
 const LANDING_SKID_WIDTH = 0.03;
 const LANDING_SKID_HEIGHT = 0.03;
 
@@ -58,6 +55,10 @@ const TOP_BLADE_WIDTH = 0.02;
 const MAST_LENGTH = 0.03;
 const MAST_HEIGHT = 0.09;
 const MAST_WIDTH = 0.03;
+
+const MAX_SPEED = 0.008;
+const MAX_ANGLE = 30;
+const MIN_HEIGHT = 0.2 * LANDING_SKID_LENGTH/0.5 
 
 function setup(shaders)
 {
@@ -102,12 +103,14 @@ function setup(shaders)
            
                 break;
             case "ArrowUp":
-                if(height < 3.0){
+                if(height == 0)
+                    height = MIN_HEIGHT;
+                else if(height < 3.0){
                     height += 0.05;
                 }
                 break;
             case "ArrowDown":
-                if(height >= 0.05) {
+                if(height >= MIN_HEIGHT) {
                     height -= 0.05;
                 }
                 else {
@@ -123,7 +126,7 @@ function setup(shaders)
                 mView = lookAt([0,0.6,-1], [0,0.6,0], [0,1,0]);
                 break;
             case "3":
-                mView = lookAt([0,1.6,0],  [0,0.6,0], [0,0,-1]);
+                mView = lookAt([0,1.6,0], [0,0,0], [0,0,-2]);
                 break;
             case "4":
                 mView = lookAt([1, 0.6, 0.0], [0, 0.6, 0], [0, 1, 0]);
@@ -187,14 +190,20 @@ function setup(shaders)
 
     function render() {
         if(animation) {
-            if(slowHelicopter && incHelicopter >= 0.0001)
-                incHelicopter -= 0.0001;
+            if(slowHelicopter && incHelicopter >= 0.0001) {
+                incHelicopter -= 0.0001
+                if(incHelicopter < 0.0001)
+                    incHelicopter = 0
 
             if(slowBlade && incBlade >= 0.0005)
                 incBlade -= 0.0005;
+            }
         } 
 
         helicopterSpeed += incHelicopter;
+
+        console.log(incHelicopter)
+
 
         if(height == 0) 
             incHelicopter = 0;
@@ -203,15 +212,8 @@ function setup(shaders)
             incBlade = 0.05;
      
         bladeSpeed += incBlade + incHelicopter;
-        
-        if(height <= 0.5) {
-            if(incHelicopter == 0)
-                inclination = 0
-            else
-                inclination -= inclination/(height/0.05)
-        }
-        else
-            inclination = incHelicopter * MAX_ANGLE / MAX_SPEED;
+    
+        inclination = incHelicopter * MAX_ANGLE / MAX_SPEED;
 
         window.requestAnimationFrame(render);
 
@@ -233,7 +235,7 @@ function setup(shaders)
             multScale([0.2,0.2,0.2]);
             multTranslation([(CABIN_LENGTH + TAIL_CONE_LENGTH)*3, (CABIN_HEIGHT+0.07) + height, 0.0]);
             multRotationX(-inclination);
-            multRotationY(-90);
+            multRotationY(-90 + incHelicopter*2500);
             helicopter();
         popMatrix();
 
@@ -246,7 +248,7 @@ function setup(shaders)
     function cabin() {
         multScale([CABIN_LENGTH, CABIN_HEIGHT, CABIN_WIDTH]);
         uploadModelView();
-        SPHERE.draw(gl, program, mode);
+        SPHERE.draw(gl, program, gl.LINES);
     }
     
     function tailCone() {
@@ -277,7 +279,8 @@ function setup(shaders)
 
     function landingSkid(){
         multTranslation([0.0, -CABIN_HEIGHT - 0.07, CABIN_WIDTH])
-        multScale([CABIN_LENGTH + 0.2, LANDING_SKID_HEIGHT , LANDING_SKID_WIDTH]);
+        
+        multScale([LANDING_SKID_LENGTH, LANDING_SKID_HEIGHT , LANDING_SKID_WIDTH]);
         multRotationZ(-90);
         uploadModelView();
         CYLINDER.draw(gl, program, mode);
