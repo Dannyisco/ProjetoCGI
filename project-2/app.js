@@ -10,8 +10,8 @@ import * as BUNNY from '../../libs/objects/bunny.js';
 
 /** @type WebGLRenderingContext */
 let gl;
+let uColor;
 
-let on = false;
 let helicopterSpeed = 0; 
 let bladeSpeed = 0;       
 let incHelicopter = 0.0;
@@ -69,7 +69,7 @@ function setup(shaders)
 
     let mProjection = ortho(-aspect*zoom,aspect*zoom, -zoom, zoom, 0.01, 10);
     let mView = lookAt([3, 1.7, 3], [0, 0.6, 0], [0, 1, 0]);
-    //let  mView = lookAt([0,1.6,0],  [0,0.6,0], [0,0,-1]);
+
     resize_canvas();
     window.addEventListener("resize", resize_canvas);
 
@@ -144,7 +144,7 @@ function setup(shaders)
                 */
 
     
-    gl.clearColor(0.3, 0.51, 0.82, 1.0);
+    gl.clearColor(0.02, 0.07, 0.17, 1.0);
 
     PYRAMID.init(gl);
     SPHERE.init(gl);
@@ -225,8 +225,9 @@ function setup(shaders)
         
         loadMatrix(mView);
 
-        const uColor = gl.getUniformLocation(program, "uColor");
-        gl.uniform3fv(uColor, vec3(0.98, 0.31, 0.09));
+        uColor = gl.getUniformLocation(program, "uColor");
+
+        gl.uniform3fv(uColor, vec3(0.45, 0.24, 0.76));
 
         pushMatrix();
             multRotationY(360 * helicopterSpeed);
@@ -238,7 +239,7 @@ function setup(shaders)
         popMatrix();
 
         
-        background(uColor);
+        background();
 
     }
 
@@ -387,12 +388,10 @@ function setup(shaders)
 
 
     function helicopter() {
-       // const uColor = gl.getUniformLocation(program, "uColor");
         pushMatrix();
             blades();
         popMatrix();
         
-        //gl.uniform3fv(uColor, vec3(0.0, 1, 0.0));
         pushMatrix();
             cabin();
         popMatrix();
@@ -419,42 +418,22 @@ function setup(shaders)
         
     }
 
-    function background(uColor) {
-        gl.uniform3fv(uColor, vec3(0.16, 0.55, 0.18));
+   
+    function roads(){
         pushMatrix();
-            plane();
-        popMatrix();
-        pushMatrix();
-            multScale([0.9, 1.5, 0.9]);
-            multTranslation([-0.6, -0.005, -0.7]);
-            pyramidBuilding(uColor);
-        popMatrix();
-        pushMatrix();
-            helipads(uColor);
-        popMatrix();
-        pushMatrix();
-            roads(uColor);
-        popMatrix();
-        
-
-        
-
-    }
-    function roads(uColor){
-        pushMatrix();
-            road(uColor);
+            road();
         popMatrix();
         pushMatrix();
             multRotationY(90);
-            road(uColor);
+            road();
         popMatrix();
         pushMatrix();
             multRotationY(-90);
-            road(uColor);
+            road();
         popMatrix();
     }
 
-    function road(uColor){
+    function road(){
         gl.uniform3fv(uColor, vec3(0.0, 0.0, 0.0));
         pushMatrix();
             multTranslation([-0.7, 0.0, 0.01]);
@@ -482,22 +461,22 @@ function setup(shaders)
     }
 
     
-    function helipads(uColor){
+    function helipads(){
         gl.uniform3fv(uColor, vec3(0.3, 0.1, 0.1));
         pushMatrix();
-            helipad(uColor);
+            helipad();
         popMatrix();
         gl.uniform3fv(uColor, vec3(0.1, 0.1, 0.1));
         pushMatrix();
-            helipad(uColor);
+            helipad();
         popMatrix();
         gl.uniform3fv(uColor, vec3(0.0, 0.0, 0.2));
         pushMatrix();
-            helipad(uColor);
+            helipad();
         popMatrix();
     }
 
-    function helipad(uColor){
+    function helipad(){
         gl.uniform3fv(uColor, vec3(0.0, 0.0, 0.0));
         pushMatrix();
             multTranslation([0.46, 0.0, 0.01]);
@@ -545,7 +524,7 @@ function setup(shaders)
         CUBE.draw(gl, program, mode);
     }
 
-    function pyramidBuilding(uColor){
+    function pyramidBuilding(){
         gl.uniform3fv(uColor, vec3(0.3, 0.1, 0.1));
         pushMatrix();
             base();
@@ -629,6 +608,175 @@ function setup(shaders)
         multScale([0.5, 0.06, 0.5]);
         uploadModelView();
         CUBE.draw(gl, program, mode);
+    }
+
+    function column() {
+        pushMatrix();
+            multScale([0.01, 0.3, 0.01]);
+            uploadModelView();
+            CUBE.draw(gl, program, mode);
+        popMatrix();
+    }
+
+    function column2() {
+        pushMatrix();
+            multScale([0.01, 0.05, 0.01]);
+            uploadModelView();
+            CUBE.draw(gl, program, mode);
+        popMatrix();
+    }
+
+    function roof() {
+        pushMatrix();
+            multTranslation([0.0, 0.005 + 0.3 + 0.05, 0.075]);
+            multScale([0.1, 0.01, 0.05]);
+            uploadModelView();
+            CUBE.draw(gl, program, mode);
+        popMatrix();
+    }
+
+
+    function tower() {
+        gl.uniform3fv(uColor, vec3(0.59, 0.73, 0.83));
+        pushMatrix();
+            multTranslation([0.0, 0.6, 0.0]);
+            towerMast();
+        popMatrix();
+
+        gl.uniform3fv(uColor, vec3(0.33, 0.35, 0.36));
+        pushMatrix();
+            roof();
+        popMatrix();
+
+        pushMatrix();
+            multTranslation([0.05, 0.025 + 0.3, 0.1 - 0.01]);
+            column2();
+        popMatrix();
+
+        pushMatrix();
+            multTranslation([-0.05, 0.025 + 0.3, 0.1 - 0.01]);
+            column2();
+        popMatrix();
+
+        pushMatrix();
+            multTranslation([-0.05 + 0.01, 0.15, -0.05 + 0.01]);
+            column();
+        popMatrix();
+
+        pushMatrix();
+            multTranslation([0.05 - 0.01, 0.15, -0.05 + 0.01]);
+            column();
+        popMatrix();
+
+        pushMatrix();
+            multTranslation([0.0, 0.0, 0.05]);
+            towerHalf();
+        popMatrix();
+
+        pushMatrix();
+            multTranslation([0.0, 0.3, 0.0]);
+            towerHalf();
+        popMatrix();
+    }
+
+    function towerHalf() {
+        gl.uniform3fv(uColor, vec3(0.2, 0.62, 0.93));
+        pushMatrix();
+            multTranslation([0.0, 0.18, 0.0]);
+            windows();
+        popMatrix();
+
+        gl.uniform3fv(uColor, vec3(0.09, 0.5, 0.78));
+        pushMatrix();
+            multTranslation([0.0, 0.09, 0.0]);
+            windows();
+        popMatrix();
+
+        gl.uniform3fv(uColor, vec3(0.03, 0.4, 0.66));
+        pushMatrix();
+            windows();
+        popMatrix();
+        
+        gl.uniform3fv(uColor, vec3(0.63, 0.65, 0.66));
+
+        pushMatrix();
+            towerCube();
+        popMatrix();
+    }
+
+    function towerCube() {
+        multTranslation([0.0, 0.15, 0.0]);
+        multScale([0.1, 0.3, 0.1]);
+        uploadModelView();
+        CUBE.draw(gl, program, mode);
+    }
+
+    function towerMast() {
+        pushMatrix();
+            multTranslation([0.0, 0.015, 0.0]);
+            multScale([0.05, 0.03, 0.05]);
+            uploadModelView();
+            CUBE.draw(gl, program, mode);
+        popMatrix();
+
+        pushMatrix();
+            multTranslation([0.0, 0.03 + 0.05, 0.0]);
+            multScale([0.025, 0.1, 0.025]);
+            uploadModelView();
+            PYRAMID.draw(gl, program, mode);
+        popMatrix();
+
+        pushMatrix();
+            multTranslation([0.0, 0.03 + 0.09 + 0.01, 0.0]);
+            multScale([0.02, 0.02, 0.02]);
+            uploadModelView();
+            SPHERE.draw(gl, program, mode);
+        popMatrix();
+    }
+
+    function squareWindow() {
+        multTranslation([0.0, 0.06, 0.0]);
+        multScale([0.101, 0.08, 0.06]);
+        uploadModelView();
+        CUBE.draw(gl, program, mode);
+    }
+
+    function windows() {
+        pushMatrix();
+            multRotationY(90);
+            squareWindow();
+        popMatrix();
+
+        pushMatrix();
+            squareWindow();
+        popMatrix();
+    }
+
+    function background() {
+
+        pushMatrix();
+            multTranslation([-0.6, -0.005, -0.7]);
+            multScale([0.5, 0.5, 0.5]);
+            pyramidBuilding(uColor);
+        popMatrix();
+
+        pushMatrix();
+            helipads();
+        popMatrix();
+
+        pushMatrix();
+            roads();
+        popMatrix();
+
+        pushMatrix();
+            multScale([1.3, 1.5, 1.5]);
+            tower();
+        popMatrix();
+
+        gl.uniform3fv(uColor, vec3(0.05, 0.19, 0.1));
+        pushMatrix();
+            plane();
+        popMatrix();
     }
 
     function plane(){
