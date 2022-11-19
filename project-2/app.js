@@ -18,6 +18,9 @@ let initPos = vec4(0.0);
 
 let time = 0;  
 let speed = 1/60.0; 
+let start = 0;
+
+let boxes = [];
 
 let dropBox = false;
 let helicopterSpeed = 0; 
@@ -86,24 +89,21 @@ function setup(shaders)
     window.addEventListener("resize", resize_canvas);
 
     document.onkeyup = function(event) {
+        if (event.code === 'Space') {
+            mModel = mult(inverse(mView),a);
+
+            boxes.push({startTime : time, initPos : mult(mModel, vec4(0, 0, 0, 1))})
+        }
+
         switch(event.key) {
             case "ArrowLeft":
                 slowHelicopter = true;
-                break;
-            case "Space":
-                dropBox = true;
-                //sleep(5000).then(() => {dropBox = false});
-            case "b":
-                mModel = mult(inverse(mView),a);
-                initPos = mult(mModel, vec4(0, 0, 0, 1));
-                dropBox = true;
-                sleep(5000).then(() => {dropBox = false});
-                time = 0
                 break;
         }
     }
 
     document.onkeydown = function(event) {
+    
         switch(event.key) {
             case 'w':
                 mode = gl.LINES; 
@@ -221,7 +221,6 @@ function setup(shaders)
             }
 
             time += speed;
-            
         } 
 
         helicopterSpeed += incHelicopter;
@@ -266,40 +265,34 @@ function setup(shaders)
             a = modelView();
         popMatrix();
         
-        if(dropBox) {
-            gl.uniform3fv(uColor, vec3(1.0, 0.0, 0.0));
 
-            let mModel = mult(inverse(mView),a);
-            let initPos = mult(mModel, vec4(0, 0, 0, 1));
-            pushMatrix();
-                //multTranslation([0.0, 2.0 * time, 0.0]);
-                multTranslation([initPos[0], initPos[1], initPos[2]])
-                box();
-            popMatrix(); 
-            
-        }
-
-    
-
-
-            a = modelView();
-        popMatrix()
         
-        if(dropBox) {
-            time += speed;
+        for(let i = 0; i< boxes.length ; i++){
+        
             gl.uniform3fv(uColor, vec3(1.0, 0.0, 0.0));
-           
-            pushMatrix();
-                if(initPos[1] - (0.6 * time )-0.04 > 0) {
-                    multTranslation([0.0, - 0.6 * time, 0.0]);
-                    multTranslation([initPos[0], initPos[1], initPos[2]])
-                }
-                else
-                    multTranslation([initPos[0], 0.04, initPos[2]]);
-                box();
-            popMatrix(); 
-            
-        }
+
+            let currentTime = time - boxes[i].startTime;
+            let x = boxes[i].initPos[0] + incHelicopter * currentTime
+            let z = boxes[i].initPos[2] + incHelicopter * currentTime
+            let y = boxes[i].initPos[1] - (0.98 * Math.pow(currentTime, 2) * 0.5)        
+            if(currentTime < 5) {
+                pushMatrix();
+                    if(y - 0.04 > 0) {
+                        multTranslation([x, y, z]); 
+                    }
+                    else
+                        multTranslation([boxes[i].initPos[0], 0.04, boxes[i].initPos[2]]);
+                    box();
+                popMatrix(); 
+            }
+            else {
+                boxes.splice(i,1);
+                i--
+            }
+                
+        
+
+         }
 
     }
 
@@ -912,7 +905,6 @@ function setup(shaders)
         column();
     popMatrix();
 
-    ;
     pushMatrix();
         multTranslation([0.55, 0.71, -0.247]);
         multScale([0.02, 0.175, 0.02]);
@@ -977,7 +969,7 @@ function setup(shaders)
 
 
     function frontWiondow(){
-        multTranslation([0.456, 0.489, 0.16]);
+        multTranslation([0.456, 0.489, 0.159]);
         multScale([0.17, 0.96, 0.02]);
         uploadModelView();
         CUBE.draw(gl, program, mode);
