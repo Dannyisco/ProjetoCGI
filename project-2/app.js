@@ -1,5 +1,5 @@
 import { buildProgramFromSources, loadShadersFromURLS, setupWebGL } from "../../libs/utils.js";
-import { ortho, lookAt, flatten, vec3, mult, rotateX, rotateY } from "../../libs/MV.js";
+import { ortho, lookAt, flatten, vec3, vec4, mult, rotateX, rotateY, inverse } from "../../libs/MV.js";
 import {modelView, loadMatrix, multRotationX, multRotationY, multRotationZ, multScale, pushMatrix, popMatrix, multTranslation } from "../../libs/stack.js";
 
 import * as SPHERE from '../../libs/objects/sphere.js';
@@ -11,7 +11,15 @@ import * as BUNNY from '../../libs/objects/bunny.js';
 /** @type WebGLRenderingContext */
 let gl;
 let uColor;
+let a;
 
+let mModel;
+let initPos = vec4(0.0);
+
+let time = 0;  
+let speed = 1/60.0; 
+
+let dropBox = false;
 let helicopterSpeed = 0; 
 let bladeSpeed = 0;       
 let incHelicopter = 0.0;
@@ -25,6 +33,7 @@ let slowHelicopter = false;
 let slowBlade = false;
 let theta = 30;
 let gama = 60;
+
 
 //duas rotacoes por segundo para helices
 const CABIN_LENGTH = 0.65;
@@ -81,6 +90,13 @@ function setup(shaders)
             case "ArrowLeft":
                 slowHelicopter = true;
                 break;
+            case "b":
+                mModel = mult(inverse(mView),a);
+                initPos = mult(mModel, vec4(0, 0, 0, 1));
+                dropBox = true;
+                sleep(5000).then(() => {dropBox = false});
+                time = 0
+                break;
         }
     }
 
@@ -95,6 +111,7 @@ function setup(shaders)
             case 'p':
                 animation = !animation;
                 break;
+            
             case "ArrowLeft":
                 slowHelicopter = false;
 
@@ -119,6 +136,7 @@ function setup(shaders)
                     sleep(2000).then(() => {slowBlade = false; incBlade = 0});
                 }
                 break;
+            
             case "1":
                 mView = mult(lookAt([0,-3,4], [0,0.4,0], [0,1,0]), mult(rotateX(gama), rotateY(theta)));
                 break;
@@ -198,12 +216,11 @@ function setup(shaders)
             if(slowBlade && incBlade >= 0.0005)
                 incBlade -= 0.0005;
             }
+
+            
         } 
 
         helicopterSpeed += incHelicopter;
-
-        console.log(incHelicopter)
-
 
         if(height == 0) 
             incHelicopter = 0;
@@ -228,8 +245,12 @@ function setup(shaders)
 
         uColor = gl.getUniformLocation(program, "uColor");
 
-        gl.uniform3fv(uColor, vec3(0.45, 0.24, 0.76));
+        pushMatrix();
+            multScale([1.2, 1.2, 1.2]);
+            background();
+        popMatrix();
 
+        gl.uniform3fv(uColor, vec3(0.45, 0.24, 0.76));
         pushMatrix();
             multRotationY(360 * helicopterSpeed);
             multScale([0.2,0.2,0.2]);
@@ -237,18 +258,43 @@ function setup(shaders)
             multRotationX(-inclination);
             multRotationY(-90 + incHelicopter*2500);
             helicopter();
-        popMatrix();
+            a = modelView();
+        popMatrix()
+        
+        if(dropBox) {
+            time += speed;
+            gl.uniform3fv(uColor, vec3(1.0, 0.0, 0.0));
+           
+            pushMatrix();
+                if(initPos[1] - (0.6 * time )-0.04 > 0) {
+                    multTranslation([0.0, - 0.6 * time, 0.0]);
+                    multTranslation([initPos[0], initPos[1], initPos[2]])
+                }
+                else
+                    multTranslation([initPos[0], 0.04, initPos[2]]);
+                box();
+            popMatrix(); 
+            
+        }
 
-        pushMatrix();
-            multScale([1.2, 1.2, 1.2]);
-            background();
-        popMatrix();
+        console.log(initPos[0])
+
+    }
+
+    function droppingBox() {
+        
+    }
+
+    function box() {
+        multScale([0.08, 0.08, 0.08]);
+        uploadModelView();
+        CUBE.draw(gl, program, mode);
     }
 
     function cabin() {
         multScale([CABIN_LENGTH, CABIN_HEIGHT, CABIN_WIDTH]);
         uploadModelView();
-        SPHERE.draw(gl, program, gl.LINES);
+        SPHERE.draw(gl, program, mode);
     }
     
     function tailCone() {
