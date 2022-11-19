@@ -13,6 +13,8 @@ let gl;
 let uColor;
 let a;
 
+let mModel;
+let initPos = vec4(0.0);
 
 let time = 0;  
 let speed = 1/60.0; 
@@ -91,6 +93,12 @@ function setup(shaders)
             case "Space":
                 dropBox = true;
                 //sleep(5000).then(() => {dropBox = false});
+            case "b":
+                mModel = mult(inverse(mView),a);
+                initPos = mult(mModel, vec4(0, 0, 0, 1));
+                dropBox = true;
+                sleep(5000).then(() => {dropBox = false});
+                time = 0
                 break;
         }
     }
@@ -106,6 +114,7 @@ function setup(shaders)
             case 'p':
                 animation = !animation;
                 break;
+            
             case "ArrowLeft":
                 slowHelicopter = false;
 
@@ -212,6 +221,7 @@ function setup(shaders)
             }
 
             time += speed;
+            
         } 
 
         helicopterSpeed += incHelicopter;
@@ -269,8 +279,29 @@ function setup(shaders)
             
         }
 
-    }
+    
 
+
+            a = modelView();
+        popMatrix()
+        
+        if(dropBox) {
+            time += speed;
+            gl.uniform3fv(uColor, vec3(1.0, 0.0, 0.0));
+           
+            pushMatrix();
+                if(initPos[1] - (0.6 * time )-0.04 > 0) {
+                    multTranslation([0.0, - 0.6 * time, 0.0]);
+                    multTranslation([initPos[0], initPos[1], initPos[2]])
+                }
+                else
+                    multTranslation([initPos[0], 0.04, initPos[2]]);
+                box();
+            popMatrix(); 
+            
+        }
+
+    }
 
     function box() {
         multScale([0.08, 0.08, 0.08]);
@@ -449,9 +480,9 @@ function setup(shaders)
         pushMatrix();
             masts();
         popMatrix();
-        
     }
 
+   
     function roads(){
         pushMatrix();
             road();
@@ -681,6 +712,124 @@ function setup(shaders)
         popMatrix();
     }
 
+
+    function b() {
+        multScale([0.05, 0.005, 0.05]);
+        uploadModelView();
+        CUBE.draw(gl, program, mode);
+    }
+
+    function c() {
+        pushMatrix();
+            
+            multTranslation([0.0,0.585 + 0.08 + 0.08 + 0.1, 0.0]);
+            multRotationZ(25)
+            multRotationX(20)
+            multScale([0.18, 0.01, 0.18]);
+            uploadModelView();
+            CYLINDER.draw(gl, program, gl.TRIANGLES);
+        popMatrix();
+
+
+        pushMatrix();
+            multTranslation([0.0,0.585 + 0.08 + 0.08 + 0.1, 0.0]);
+            multScale([0.11, 0.11, 0.11]);
+            uploadModelView();
+            SPHERE.draw(gl, program, mode);
+        popMatrix();
+    }
+    
+    function towerPlanet() {
+
+        pushMatrix();
+            multTranslation([0.0,Math.sin(time) * 0.04, 0.0]);
+            c()
+        popMatrix();
+
+        pushMatrix();
+            multTranslation([0.0,0.585 + 0.08 + 0.08, 0.0]);
+            multScale([0.03, 0.1, 0.03]);
+            uploadModelView();
+            PYRAMID.draw(gl, program, mode);
+        popMatrix();
+
+        pushMatrix();
+            multTranslation([0.0, 0.025 + 0.5 + 0.05 - 0.04 + 0.05 + 0.04, 0.0]);
+            multScale([0.3, 0.15, 0.3]);
+            multRotationX(180)
+            uploadModelView();
+            SPHERE.draw(gl, program, mode);
+        popMatrix();
+
+        pushMatrix();
+            multTranslation([0.0, 0.025 + 0.5 + 0.05 - 0.04 + 0.05, 0.0]);
+            multScale([0.3, 0.08, 0.3]);
+            multRotationX(180)
+            uploadModelView();
+            CYLINDER.draw(gl, program, mode);
+        popMatrix();
+
+        pushMatrix();
+            multTranslation([0.0, 0.025 + 0.5 + 0.05 - 0.04, 0.0]);
+            multScale([0.12, 0.05, 0.12]);
+            multRotationX(180)
+            uploadModelView();
+            PYRAMID.draw(gl, program, mode);
+        popMatrix();
+
+        pushMatrix();
+            multTranslation([0.0, 0.025 + 0.5 - 0.02, 0.0]);
+            multScale([0.06, 0.05, 0.06]);
+            uploadModelView();
+            PYRAMID.draw(gl, program, mode);
+        popMatrix();
+
+        pushMatrix();
+            multTranslation([0.0, 0.005 + 0.34, 0.0]);
+            multScale([2.5, 1.0, 2.5]);
+            b()
+        popMatrix();
+
+        pushMatrix();
+            multTranslation([0.0, 0.005 + 0.28, 0.0]);
+            multScale([2.0, 1.0, 2.0]);
+            b()
+        popMatrix();
+
+        pushMatrix();
+            multTranslation([0.0, 0.005 + 0.22, 0.0]);
+            multScale([1.5, 1.0, 1.5]);
+            b()
+        popMatrix();
+
+        pushMatrix();
+            multTranslation([0.0, 0.005 + 0.16, 0.0]);
+            b()
+        popMatrix();
+
+        pushMatrix();
+            multTranslation([0.0, 0.25 - 0.02, 0.0]);
+            multScale([0.06, 0.5, 0.06]);
+            multRotationX(180)
+            uploadModelView();
+            PYRAMID.draw(gl, program, mode);
+        popMatrix();
+
+        pushMatrix();
+            multTranslation([0.0, 0.09, 0.0]);
+            multScale([0.1, 0.1, 0.1]);
+            uploadModelView();
+            PYRAMID.draw(gl, program, mode);
+        popMatrix();
+
+        pushMatrix();
+            multTranslation([0.0, 0.03, 0.0]);
+            multScale([0.1, 0.06, 0.1]);
+            uploadModelView();
+            CUBE.draw(gl, program, mode);
+        popMatrix();
+    }
+
     function background() {
         pushMatrix();
             helipad();
@@ -696,8 +845,14 @@ function setup(shaders)
         popMatrix();
         
         pushMatrix();
-            multTranslation([-1.2, -0.005, 0.5]);
+            multTranslation([-1.2, -0.005, -0.5]);
             towerOfAvengers();
+        popMatrix();
+
+        gl.uniform3fv(uColor, vec3(0.9, 0.38, 0.73));
+        pushMatrix();
+            multTranslation([0.5, 0.0, 0.5]);
+            towerPlanet();
         popMatrix();
 
         gl.uniform3fv(uColor, vec3(0.05, 0.19, 0.1));
@@ -745,6 +900,26 @@ function setup(shaders)
         popMatrix();
 
         pushMatrix();
+        multTranslation([0.37, 0.71, -0.247]);
+        multScale([0.02, 0.175, 0.02]);
+        column();
+    popMatrix();
+
+    
+    pushMatrix();
+        multTranslation([0.46, 0.71, -0.247]);
+        multScale([0.02, 0.175, 0.02]);
+        column();
+    popMatrix();
+
+    ;
+    pushMatrix();
+        multTranslation([0.55, 0.71, -0.247]);
+        multScale([0.02, 0.175, 0.02]);
+        column();
+    popMatrix();
+
+        pushMatrix();
             multTranslation([0.359, 0.67, 0.05]);
             multRotationZ(90);
             multScale([0.2, 0.02, 0.2]);
@@ -787,26 +962,8 @@ function setup(shaders)
             principalStage();
         popMatrix();
 
-        gl.uniform3fv(uColor, vec3(0.6, 0.9, 1.0));
-        pushMatrix();
-            multTranslation([0.37, 0.71, -0.247]);
-            multScale([0.02, 0.175, 0.02]);
-            column();
-        popMatrix();
-
-        gl.uniform3fv(uColor, vec3(0.6, 0.9, 1.0));
-        pushMatrix();
-            multTranslation([0.46, 0.71, -0.247]);
-            multScale([0.02, 0.175, 0.02]);
-            column();
-        popMatrix();
-
-        gl.uniform3fv(uColor, vec3(0.6, 0.9, 1.0));
-        pushMatrix();
-            multTranslation([0.55, 0.71, -0.247]);
-            multScale([0.02, 0.175, 0.02]);
-            column();
-        popMatrix();
+        
+       
 
         
     }
