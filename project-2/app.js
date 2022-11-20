@@ -11,18 +11,17 @@ import * as BUNNY from '../../libs/objects/bunny.js';
 /** @type WebGLRenderingContext */
 let gl;
 let uColor;
-let a;
 
+let mv;
 let mModel;
-let initPos = vec4(0.0);
+let heliPos;
 
 let time = 0;  
 let speed = 1/60.0; 
-let start = 0;
 
 let boxes = [];
 
-let dropBox = false;
+
 let helicopterSpeed = 0; 
 let bladeSpeed = 0;       
 let incHelicopter = 0.0;
@@ -90,9 +89,11 @@ function setup(shaders)
 
     document.onkeyup = function(event) {
         if (event.code === 'Space') {
-            mModel = mult(inverse(mView),a);
-
-            boxes.push({startTime : time, initPos : mult(mModel, vec4(0, 0, 0, 1))})
+            mModel = mult(inverse(mView),mv);
+            heliPos = mult(mModel, vec4(0, 0, 0, 1))
+            let finalPosX = 0;   
+            let finalPosZ = 0; 
+            boxes.push({startTime : time, initPos : heliPos, initVel : incHelicopter, finalPos : [finalPosX, finalPosZ]});
         }
 
         switch(event.key) {
@@ -119,7 +120,7 @@ function setup(shaders)
                 slowHelicopter = false;
 
                 if(incHelicopter < MAX_SPEED && height > 0)
-                    incHelicopter += 0.0001;
+                    incHelicopter += 0.0002
            
                 break;
             case "ArrowUp":
@@ -151,6 +152,12 @@ function setup(shaders)
                 break;
             case "4":
                 mView = lookAt([1, 0.6, 0.0], [0, 0.6, 0], [0, 1, 0]);
+                break;
+            case "5":
+                mModel = mult(inverse(mView),mv);
+                heliPos = mult(mModel, vec4(0, 0, 0, 1))
+
+                mView = lookAt([heliPos[0] + CABIN_LENGTH* 0.2/2, heliPos[1], heliPos[2]], [heliPos[0] + CABIN_LENGTH* 0.2/2 + 0.2, heliPos[1], heliPos[2] + 0.2], [0, 1, 0]);
                 break;
          }
     };
@@ -262,7 +269,7 @@ function setup(shaders)
             multRotationY(-90 + incHelicopter*2500);
             helicopter();
 
-            a = modelView();
+            mv = modelView();
         popMatrix();
         
 
@@ -272,18 +279,25 @@ function setup(shaders)
             gl.uniform3fv(uColor, vec3(1.0, 0.0, 0.0));
 
             let currentTime = time - boxes[i].startTime;
-            let x = boxes[i].initPos[0] + incHelicopter * currentTime
-            let z = boxes[i].initPos[2] + incHelicopter * currentTime
-            let y = boxes[i].initPos[1] - (0.98 * Math.pow(currentTime, 2) * 0.5)        
+
+            let x = boxes[i].initPos[0] - boxes[i].initVel * currentTime * 15
+            let z = boxes[i].initPos[2] + boxes[i].initVel * currentTime * 15
+            let y = boxes[i].initPos[1] - (0.98 * Math.pow(currentTime, 2) * 0.5) 
+              
             if(currentTime < 5) {
                 pushMatrix();
                     if(y - 0.04 > 0) {
                         multTranslation([x, y, z]); 
+                        boxes[i].finalPos[0] = x;
+                        boxes[i].finalPos[1] = z;
                     }
                     else
-                        multTranslation([boxes[i].initPos[0], 0.04, boxes[i].initPos[2]]);
+                        multTranslation([boxes[i].finalPos[0], 0.04,  boxes[i].finalPos[1]]);            
                     box();
                 popMatrix(); 
+
+                console.log(x)
+
             }
             else {
                 boxes.splice(i,1);
