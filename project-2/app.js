@@ -1103,7 +1103,7 @@ function setup(shaders)
 
         
         pushMatrix();
-            multTranslation([-0.5, 0.0, 0.5]);
+            multTranslation([-0.75, 0.0, 0.5]);
             doofenshmirtzEvilInc();
         popMatrix();
 
@@ -1115,8 +1115,8 @@ function setup(shaders)
         
         gl.uniform3fv(uColor, vec3(0.9, 0.38, 0.73));
         pushMatrix();
-            multTranslation([0.0, 0.0, 0.]);
-            multScale([0.5, 0.5, 0.5]);
+            multTranslation([0.8, 0.01, -0.7]);
+            multScale([0.4, 0.4, 0.4]);
             batMobile();
         popMatrix();
 
