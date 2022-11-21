@@ -17,6 +17,7 @@ let mModel;
 let heliPos;
 
 let view1 = true;
+let view5 = false;
 
 let time = 0;  
 let speed = 1/60.0; 
@@ -30,7 +31,7 @@ let incHelicopter = 0.0;
 let incBlade = 0.0;
 let mode;               // Drawing mode (gl.LINES or gl.TRIANGLES)
 let animation = true;   // Animation is running
-let zoom = 1.0;
+let zoom = 30.0;
 let height = 0; 
 let inclination = 0;
 let slowHelicopter = false;
@@ -41,38 +42,40 @@ let theta ;
 
 
 //duas rotacoes por segundo para helices
-const CABIN_LENGTH = 0.65;
-const CABIN_WIDTH = 0.3;
-const CABIN_HEIGHT = 0.35;
+const CABIN_LENGTH = 4.2;
+const CABIN_WIDTH = 1.9;
+const CABIN_HEIGHT = 2.3;
 
-const TAIL_CONE_LENGTH = 0.9;
-const TAIL_FIN_LENGTH = 0.2;
-const TAIL_WIDTH = 0.08;
-const TAIL_HEIGHT = 0.1;
+const TAIL_CONE_LENGTH = 5.8;
+const TAIL_FIN_LENGTH = 1.3;
+const TAIL_WIDTH = 0.5;
+const TAIL_HEIGHT = 0.6;
 
-const LANDING_SKID_LENGTH = CABIN_LENGTH + 0.2;
-const LANDING_SKID_WIDTH = 0.03;
-const LANDING_SKID_HEIGHT = 0.03;
+const LANDING_SKID_LENGTH = CABIN_LENGTH + 1.3;
+const LANDING_SKID_WIDTH = 0.2;
+const LANDING_SKID_HEIGHT = 0.2;
 
-const SKID_SUPPORTER_LENGTH = 0.63;
-const SKID_SUPPORTER_HEIGHT = 0.025;
-const SKID_SUPPORTER_WIDTH = 0.03;
+const SKID_SUPPORTER_LENGTH = 4.1;
+const SKID_SUPPORTER_HEIGHT = 0.2;
+const SKID_SUPPORTER_WIDTH = 0.2;
 
-const REAR_BLADE_LENGTH = 0.2;
-const REAR_BLADE_HEIGHT = 0.04;
-const REAR_BLADE_WIDTH = 0.01;
+const REAR_BLADE_LENGTH = 1.3;
+const REAR_BLADE_HEIGHT = 0.3;
+const REAR_BLADE_WIDTH = 0.06;
 
-const TOP_BLADE_LENGTH = 0.7;
-const TOP_BLADE_HEIGHT = 0.02;
-const TOP_BLADE_WIDTH = 0.02;
+const TOP_BLADE_LENGTH = 4.5;
+const TOP_BLADE_HEIGHT = 0.1;
+const TOP_BLADE_WIDTH = 0.1;
 
-const MAST_LENGTH = 0.03;
-const MAST_HEIGHT = 0.09;
-const MAST_WIDTH = 0.03;
+const MAST_LENGTH = 0.2;
+const MAST_HEIGHT = 0.6;
+const MAST_WIDTH = 0.2;
 
 const MAX_SPEED = 0.008;
 const MAX_ANGLE = 30;
-const MIN_HEIGHT = 0.2 * LANDING_SKID_LENGTH/0.5 
+const MIN_HEIGHT = 0.25 * LANDING_SKID_LENGTH/0.5 
+
+const BLADES_ROTATION_VELOCITY = 360*bladeSpeed;
 
 function setup(shaders)
 {
@@ -87,8 +90,8 @@ function setup(shaders)
 
     let program = buildProgramFromSources(gl, shaders["shader.vert"], shaders["shader.frag"]);
 
-    let mProjection = ortho(-aspect*zoom,aspect*zoom, -zoom, zoom, -10, 10);
-    let mView = mult(lookAt([0,-3,4], [0,0.4,0], [0,1,0]), mult(rotateX(gama), rotateY(theta)));
+    let mProjection = ortho(-aspect*zoom,aspect*zoom, -zoom, zoom, -100, 100);
+    let mView = mult(rotateX(gama), rotateY(theta));
     resize_canvas();
     window.addEventListener("resize", resize_canvas);
 
@@ -148,27 +151,29 @@ function setup(shaders)
                 break;
             
             case "1":
-                mView = mult(lookAt([0,-3,4], [0,0.4,0], [0,1,0]), mult(rotateX(gama), rotateY(theta)));
                 view1 = true;
+                view5 = false;
                 break;
             case "2":
                 view1 = false;
-                mView = lookAt([0,0.6,-1], [0,0.6,0], [0,1,0]);
+                view5 = false;
+                mView = lookAt([0,0.6,1], [0,0.6,0], [0,1,0]);
                 break;
             case "3":
                 view1 = false;
+                view5 = false;
                 mView = lookAt([0,1.6,0], [0,0,0], [0,0,-2]);
                 break;
             case "4":
                 view1 = false;
+                view5 = false;
                 mView = lookAt([1, 0.6, 0.0], [0, 0.6, 0], [0, 1, 0]);
                 break;
             case "5":
                 view1 = false;
+                view5 = true;
                 mModel = mult(inverse(mView),mv);
                 heliPos = mult(mModel, vec4(0, 0, 0, 1))
-
-                mView = lookAt([heliPos[0] + CABIN_LENGTH* 0.2/2, heliPos[1], heliPos[2]], [heliPos[0] + CABIN_LENGTH* 0.2/2 + 0.2, heliPos[1], heliPos[2] + 0.2], [0, 1, 0]);
                 break;
          }
     };
@@ -204,7 +209,7 @@ function setup(shaders)
         aspect = canvas.width / canvas.height;
 
         gl.viewport(0,0,canvas.width, canvas.height);
-        mProjection = ortho(-aspect*zoom, aspect*zoom, -zoom, zoom, 0.01, 10);
+        mProjection = ortho(-aspect*zoom, aspect*zoom, -zoom, zoom, -100, 100);
     }
 
     
@@ -231,8 +236,11 @@ function setup(shaders)
         gama = document.getElementById('1').value;
         theta = document.getElementById('2').value;
 
+        
         if(view1)
-            mView = mult(lookAt([0,-3,4], [0,0.4,0], [0,1,0]), mult(rotateX(gama), rotateY(theta)));
+            mView = mult(rotateX(gama), rotateY(theta));
+        if(view5)
+            mView = lookAt([heliPos[0] + CABIN_LENGTH* 0.25/2, heliPos[1], heliPos[2]], [heliPos[0] + CABIN_LENGTH* 0.25/2 + 0.2, heliPos[1], heliPos[2] + 0.2], [0, 1, 0]);
         
         if(animation) {
             if(slowHelicopter && incHelicopter >= 0.0001) {
@@ -265,31 +273,28 @@ function setup(shaders)
         
         gl.useProgram(program);
 
-        mProjection = ortho(-aspect*zoom,aspect*zoom, -zoom, zoom, 0.01, 10);
+        mProjection = ortho(-aspect*zoom,aspect*zoom, -zoom, zoom, -100, 100);
         uploadProjection(mProjection);
         
         loadMatrix(mView);
 
         uColor = gl.getUniformLocation(program, "uColor");
-
+        /*
         pushMatrix();
             multScale([1.2, 1.2, 1.2]);
             background();
         popMatrix();
-
-        gl.uniform3fv(uColor, vec3(0.45, 0.24, 0.76));
+      
+        */
         pushMatrix();
             multRotationY(360 * helicopterSpeed);
-            multScale([0.2,0.2,0.2]);
-            multTranslation([(CABIN_LENGTH + TAIL_CONE_LENGTH)*3, (CABIN_HEIGHT+0.07) + height, 0.0]);
+            multTranslation([30, (CABIN_HEIGHT+0.5) + height, 0.0]);
             multRotationX(-inclination);
             multRotationY(-90 + incHelicopter*2500);
             helicopter();
-
             mv = modelView();
-        popMatrix();
-        
-
+        popMatrix(); 
+    
         
         for(let i = 0; i< boxes.length ; i++){
         
@@ -297,7 +302,7 @@ function setup(shaders)
 
             let currentTime = time - boxes[i].startTime;
 
-            let x = boxes[i].initPos[0] - boxes[i].initVel * currentTime * 15
+            let x = boxes[i].initPos[0] + boxes[i].initVel * currentTime * 15
             let z = boxes[i].initPos[2] + boxes[i].initVel * currentTime * 15
             let y = boxes[i].initPos[1] - (0.98 * Math.pow(currentTime, 2) * 0.5) 
               
@@ -313,17 +318,11 @@ function setup(shaders)
                     box();
                 popMatrix(); 
 
-                console.log(x)
-
             }
             else {
                 boxes.splice(i,1);
                 i--
             }
-                
-            
-
-            
 
          }
 
@@ -342,14 +341,14 @@ function setup(shaders)
     }
     
     function tailCone() {
-        multTranslation([TAIL_CONE_LENGTH/2 + CABIN_LENGTH/2 - 0.2, CABIN_HEIGHT/4, 0.0]);
+        multTranslation([TAIL_CONE_LENGTH/2 + CABIN_LENGTH/2 - 0.8, CABIN_HEIGHT/4, 0.0]);
         multScale([TAIL_CONE_LENGTH, TAIL_HEIGHT, TAIL_WIDTH]);
         uploadModelView();
         SPHERE.draw(gl, program, mode);
     }
     
     function tailFin() {
-        multTranslation([TAIL_CONE_LENGTH + CABIN_LENGTH/2 - 0.2, CABIN_HEIGHT/4 + 0.07, 0.0]);
+        multTranslation([TAIL_CONE_LENGTH + CABIN_LENGTH/2 - 0.8, CABIN_HEIGHT/4 + 0.5, 0.0]);
         multRotationZ(70);
         multScale([TAIL_FIN_LENGTH, TAIL_WIDTH, TAIL_HEIGHT]);
         uploadModelView();
@@ -368,7 +367,7 @@ function setup(shaders)
     }
 
     function landingSkid(){
-        multTranslation([0.0, -CABIN_HEIGHT - 0.07, CABIN_WIDTH])
+        multTranslation([0.0, -CABIN_HEIGHT - 0.5, CABIN_WIDTH])
         
         multScale([LANDING_SKID_LENGTH, LANDING_SKID_HEIGHT , LANDING_SKID_WIDTH]);
         multRotationZ(-90);
@@ -400,7 +399,7 @@ function setup(shaders)
     }
     
     function landingSkidSuporter(){
-        multRotationX(-36);
+        multRotationX(-35);
         multRotationZ(55);
         multTranslation([-SKID_SUPPORTER_LENGTH/2, 0.0, 0.0]);
         multScale([SKID_SUPPORTER_LENGTH, SKID_SUPPORTER_HEIGHT, SKID_SUPPORTER_WIDTH]);
@@ -411,45 +410,44 @@ function setup(shaders)
     function blades() {
         
         pushMatrix();
-            multRotationY(360*bladeSpeed);
+            multRotationY(BLADES_ROTATION_VELOCITY);
             multRotationY(120);
             topBlade();
         popMatrix();
 
         pushMatrix()
-            multRotationY(360*bladeSpeed);
+            multRotationY(BLADES_ROTATION_VELOCITY);
             multRotationY(240);
             topBlade();
         popMatrix();
 
         pushMatrix();
-            multRotationY(360*bladeSpeed);
+            multRotationY(BLADES_ROTATION_VELOCITY);
             topBlade();
         popMatrix();
         
         pushMatrix();
-            multTranslation([TAIL_CONE_LENGTH + REAR_BLADE_LENGTH/2 + 0.02, TAIL_HEIGHT + REAR_BLADE_HEIGHT, TAIL_WIDTH]);
-            multRotationZ(360*bladeSpeed);
+            multTranslation([TAIL_CONE_LENGTH + REAR_BLADE_LENGTH/2 + 0.6, TAIL_HEIGHT + REAR_BLADE_HEIGHT, TAIL_WIDTH]);
+            multRotationZ(BLADES_ROTATION_VELOCITY);
             multRotationY(180);
             rearBlade();
         popMatrix();
         
         pushMatrix();
-            multTranslation([TAIL_CONE_LENGTH + REAR_BLADE_LENGTH/2 + 0.02, TAIL_HEIGHT + REAR_BLADE_HEIGHT, TAIL_WIDTH]);
-            multRotationZ(360*bladeSpeed);
+            multTranslation([TAIL_CONE_LENGTH + REAR_BLADE_LENGTH/2 + 0.6, TAIL_HEIGHT + REAR_BLADE_HEIGHT, TAIL_WIDTH]);
+            multRotationZ(BLADES_ROTATION_VELOCITY);
             rearBlade();
         popMatrix();
     }
 
     function topBlade(){
-        multTranslation([TOP_BLADE_LENGTH/2, CABIN_HEIGHT/2 + TOP_BLADE_HEIGHT + 0.02, 0.0]);
+        multTranslation([TOP_BLADE_LENGTH/2, CABIN_HEIGHT/2 + TOP_BLADE_HEIGHT + 0.1, 0.0]);
         multScale([TOP_BLADE_LENGTH, TOP_BLADE_HEIGHT, TOP_BLADE_WIDTH]);
         uploadModelView();
         SPHERE.draw(gl, program, mode);
     }
 
     function rearBlade(){
-   
         multTranslation([REAR_BLADE_LENGTH/2,0,0]);
         multScale([REAR_BLADE_LENGTH, REAR_BLADE_HEIGHT, REAR_BLADE_WIDTH]);
         uploadModelView();
@@ -465,34 +463,23 @@ function setup(shaders)
 
     function masts(){
         pushMatrix();
-            multRotationY(360*bladeSpeed);
-            multTranslation([0.0, CABIN_HEIGHT/2 + 0.02, 0.0]);
+            multRotationY(BLADES_ROTATION_VELOCITY);
+            multTranslation([0.0, CABIN_HEIGHT/2 + 0.1, 0.0]);
             mast();
         popMatrix();
         
         pushMatrix();
-            multTranslation([TAIL_CONE_LENGTH + REAR_BLADE_LENGTH/2 + 0.02, TAIL_HEIGHT + REAR_BLADE_HEIGHT, TAIL_WIDTH/2]);
+            multTranslation([TAIL_CONE_LENGTH + REAR_BLADE_LENGTH/2 + 0.6, TAIL_HEIGHT + REAR_BLADE_HEIGHT, TAIL_WIDTH/2]);
             multRotationX(90)
-            multRotationY(360*bladeSpeed);
+            multRotationY(BLADES_ROTATION_VELOCITY);
             mast();
         popMatrix();
     }
 
     function helicopter() {
+        gl.uniform3fv(uColor, vec3(0.82, 0.28, 0.69));
         pushMatrix();
             blades();
-        popMatrix();
-        
-        pushMatrix();
-            cabin();
-        popMatrix();
-
-        pushMatrix();
-            tailCone();
-        popMatrix();
-
-        pushMatrix();
-            tailFin();
         popMatrix();
 
         pushMatrix();
@@ -506,6 +493,21 @@ function setup(shaders)
         pushMatrix();
             masts();
         popMatrix();
+        
+        gl.uniform3fv(uColor, vec3(0.45, 0.24, 0.76));
+        pushMatrix();
+            cabin();
+        popMatrix();
+
+        pushMatrix();
+            tailCone();
+        popMatrix();
+
+        pushMatrix();
+            tailFin();
+        popMatrix();
+
+        
     }
 
    
@@ -686,7 +688,6 @@ function setup(shaders)
         popMatrix();
         
         gl.uniform3fv(uColor, vec3(0.53, 0.56, 0.73));
-
         pushMatrix();
             towerCube();
         popMatrix();
@@ -1097,19 +1098,20 @@ function setup(shaders)
         popMatrix();
         
         pushMatrix();
-            multTranslation([-1.2, -0.005, -0.5]);
+            multTranslation([-0.1, -0.005, -0.0]);
+            multRotationY(115)
             towerOfAvengers();
         popMatrix();
 
         
         pushMatrix();
-            multTranslation([-0.5, 0.0, 0.5]);
+            multTranslation([0.4, 0.0, -0.4]);
             doofenshmirtzEvilInc();
         popMatrix();
 
         
         pushMatrix();
-            multTranslation([0.5, 0.0, 0.5]);
+            multTranslation([0.4 , 0.0, 0.5]);
             towerPlanet();
         popMatrix();
 
