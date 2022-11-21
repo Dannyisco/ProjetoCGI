@@ -1,13 +1,46 @@
 <!DOCTYPE html>
 <html>
-    <head>
+    <head> 
         <link rel="stylesheet" href="styles.css">
         <title>Projeto 2 :)</title>
         <script type="module" src="./app.js"></script>
     </head>
     <body>
+
+        <div class="slidecontainer"></div>
+                Gama:
+                <input type="range" min="-180" max="180" value="60" class="slider" id="1">
+                <span id="gama"></span> 
+
+            
+                &nbsp; Theta:
+                <input type="range" min="-180" max="180" value="30" class="slider" id="2">
+                <span id="theta"></span>
+            
+        </div>
+
         <canvas id="gl-canvas" width="128" height="128">
             Oops! Something went wrong!
         </canvas>
+        
     </body>
+
+    <script>
+        var slider1 = document.getElementById("1");
+        var output1 = document.getElementById("gama");
+        output1.innerHTML = slider1.value;
+        
+        slider1.oninput = function() {
+          output1.innerHTML = this.value;
+        }
+
+        var slider2 = document.getElementById("2");
+        var output2 = document.getElementById("theta");
+        output2.innerHTML = slider2.value;
+        
+        slider2.oninput = function() {
+          output2.innerHTML = this.value;
+        }
+    </script>
+   
 </html>
