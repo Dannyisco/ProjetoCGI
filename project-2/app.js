@@ -1,5 +1,5 @@
 import { buildProgramFromSources, loadShadersFromURLS, setupWebGL } from "../../libs/utils.js";
-import { ortho, lookAt, flatten, vec3, vec4, mult, rotateX, rotateY, inverse } from "../../libs/MV.js";
+import { ortho, lookAt, flatten, vec3, vec4, mult, rotateX, rotateY, inverse, perspective } from "../../libs/MV.js";
 import {modelView, loadMatrix, multRotationX, multRotationY, multRotationZ, multScale, pushMatrix, popMatrix, multTranslation } from "../../libs/stack.js";
 
 import * as SPHERE from '../../libs/objects/sphere.js';
@@ -76,6 +76,7 @@ const MAX_ANGLE = 30;
 const MIN_HEIGHT = LANDING_SKID_LENGTH*0.5 
 const MAX_HEIGHT = 30
 const RADIUS = 30
+const VP_DISTANCE = 50
 
 function setup(shaders)
 {
@@ -180,9 +181,7 @@ function setup(shaders)
                 break;
             case "5":
                 view1 = false;
-                zoom = 20.0;
-                mProjection = ortho(-aspect*zoom,aspect*zoom, -zoom, zoom, 10, 70);
-                
+                mProjection = perspective(VP_DISTANCE, aspect, 1, 4*VP_DISTANCE);
                 view5 = true;
                 
                 break;
@@ -248,17 +247,19 @@ function setup(shaders)
         gama = document.getElementById('1').value;
         theta = document.getElementById('2').value;
 
-        
         if(view1)
             mView = mult(lookAt([0,17,1], [0,17,0], [0,1,0]),mult(rotateX(gama), rotateY(theta)));
+        
         if(view5) {
             mModel = mult(inverse(mView),mv);
-            eyePos = mult(mModel, vec4(CABIN_LENGTH/2, 0, 0, 1))
-            atPos = mult(mModel, vec4((CABIN_LENGTH/2 + 0.1 + 30), 0, 0, 1))
-            mView = lookAt([eyePos[0], eyePos[1], eyePos[2]], [atPos[0], atPos[1], atPos[2]], [0, 1, 0]);
+            eyePos = mult(mModel, vec4(-CABIN_LENGTH/2, -0.3, 0, 1));
+            atPos = mult(mModel, vec4(-(CABIN_LENGTH/2 + 0.1 + VP_DISTANCE), 0, 0, 1));
+            mView = lookAt([eyePos[0], eyePos[1], eyePos[2]], [atPos[0], atPos[1], atPos[2]], [0, 1 , 0]);
+    
         
-        
-        }
+        }else
+            mProjection = ortho(-aspect*zoom,aspect*zoom, -zoom, zoom, -100, 100);
+
     
 
         if(animation) {
@@ -293,6 +294,7 @@ function setup(shaders)
 
         //mProjection = ortho(-aspect*zoom,aspect*zoom, -zoom, zoom, -100, 100);
         uploadProjection(mProjection);
+       
         
         loadMatrix(mView);
 
