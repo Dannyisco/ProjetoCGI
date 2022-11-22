@@ -105,12 +105,14 @@ function setup(shaders)
             heliPos = mult(mModel, vec4(0, 0, 0, 1))
             let finalPosX = 0;   
             let finalPosZ = 0;
-            let acceleration = vec3(0, 9.8 * 0.1, 0);
-            //let angularVelocity = incHelicopter * 2 * 3.14 * 60;
-            //let angle = angularVelocity * time
-            //let velocity = vec3(RADIUS * angularVelocity * Math.sin(angle) * (-0.1), 0, RADIUS * angularVelocity * Math.cos(angle) * 0.1)
-            let velocity = vec3(0);
+            let acceleration = vec3(0, -9.8, 0);
+            
+            let angle = Math.acos(heliPos[0]/RADIUS)
+            if(heliPos[2] > 0)
+                angle = -angle + 2 * Math.PI
 
+            let angularVelocity = incHelicopter * 2 * Math.PI * 60 * 0.2
+            let velocity = vec3(RADIUS * angularVelocity * Math.sin(angle) * (-1), 0, RADIUS * angularVelocity * Math.cos(angle) * (-1))
             boxes.push({startTime : time, initPos : heliPos, initVel : velocity, finalPos : [finalPosX, finalPosZ], acceleration: acceleration});
         }
 
@@ -119,6 +121,8 @@ function setup(shaders)
                 slowHelicopter = true;
                 break;
         }
+
+
     }
 
     document.onkeydown = function(event) {
@@ -304,10 +308,10 @@ function setup(shaders)
         popMatrix();
      
         pushMatrix();
-            multRotationY(360 * helicopterSpeed);
+            multRotationY(helicopterSpeed*360);
             multTranslation([RADIUS, (CABIN_HEIGHT/2 + LANDING_SKID_HEIGHT + 1.5) + height, 0.0]);
             multRotationX(-inclination);
-            multRotationY(-90 + incHelicopter*2500);
+            multRotationY(270)
             helicopter();
             mv = modelView();
         popMatrix(); 
@@ -319,9 +323,9 @@ function setup(shaders)
 
             let currentTime = time - boxes[i].startTime;
 
-            let x = boxes[i].initPos[0] //+ boxes[i].initVel[0] * currentTime + 0.5 * boxes[i].acceleration[0]*Math.pow(currentTime, 2);
+            let x = boxes[i].initPos[0] + boxes[i].initVel[0] * currentTime + 0.5 * boxes[i].acceleration[0]*Math.pow(currentTime, 2);
             let y = boxes[i].initPos[1] + boxes[i].initVel[1] * currentTime + 0.5 * boxes[i].acceleration[1]*Math.pow(currentTime, 2);
-            let z = boxes[i].initPos[2] //+ boxes[i].initVel[2] * currentTime + 0.5 * boxes[i].acceleration[2]*Math.pow(currentTime, 2);
+            let z = boxes[i].initPos[2] + boxes[i].initVel[2] * currentTime + 0.5 * boxes[i].acceleration[2]*Math.pow(currentTime, 2);
               
             if(currentTime < 5) {
                 pushMatrix();
