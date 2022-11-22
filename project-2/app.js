@@ -22,6 +22,8 @@ let view5 = false;
 
 let time = 0;  
 let speed = 1/60.0; 
+let boxMass;
+
 
 let boxes = [];
 
@@ -103,12 +105,12 @@ function setup(shaders)
             heliPos = mult(mModel, vec4(0, 0, 0, 1))
             let finalPosX = 0;   
             let finalPosZ = 0;
-            let acceleration = vec3(0, -9.8, 0)
-            let angularVelocity = incHelicopter * 2 * 3.14 * 60;
-            let angle = angularVelocity * time
-            let velocity = vec3(RADIUS * angularVelocity * Math.sin(angle) * (-0.1), 0, RADIUS * angularVelocity * Math.cos(angle) * 0.1)
+            let acceleration = vec3(0, 9.8 * 0.1, 0);
+            //let angularVelocity = incHelicopter * 2 * 3.14 * 60;
+            //let angle = angularVelocity * time
+            //let velocity = vec3(RADIUS * angularVelocity * Math.sin(angle) * (-0.1), 0, RADIUS * angularVelocity * Math.cos(angle) * 0.1)
+            let velocity = vec3(0);
 
-            //let velocity = 
             boxes.push({startTime : time, initPos : heliPos, initVel : velocity, finalPos : [finalPosX, finalPosZ], acceleration: acceleration});
         }
 
@@ -181,7 +183,7 @@ function setup(shaders)
                 break;
             case "5":
                 view1 = false;
-                mProjection = perspective(VP_DISTANCE, aspect, 1, 4*VP_DISTANCE);
+                mProjection = perspective(VP_DISTANCE, aspect, VP_DISTANCE/10 , 4*VP_DISTANCE);
                 view5 = true;
                 
                 break;
@@ -252,11 +254,9 @@ function setup(shaders)
         
         if(view5) {
             mModel = mult(inverse(mView),mv);
-            eyePos = mult(mModel, vec4(-CABIN_LENGTH/2, -0.3, 0, 1));
+            eyePos = mult(mModel, vec4(-CABIN_LENGTH/2, 0, 0, 1));
             atPos = mult(mModel, vec4(-(CABIN_LENGTH/2 + 0.1 + VP_DISTANCE), 0, 0, 1));
             mView = lookAt([eyePos[0], eyePos[1], eyePos[2]], [atPos[0], atPos[1], atPos[2]], [0, 1 , 0]);
-    
-        
         }else
             mProjection = ortho(-aspect*zoom,aspect*zoom, -zoom, zoom, -100, 100);
 
@@ -292,7 +292,6 @@ function setup(shaders)
         
         gl.useProgram(program);
 
-        //mProjection = ortho(-aspect*zoom,aspect*zoom, -zoom, zoom, -100, 100);
         uploadProjection(mProjection);
        
         
@@ -308,7 +307,7 @@ function setup(shaders)
             multRotationY(360 * helicopterSpeed);
             multTranslation([RADIUS, (CABIN_HEIGHT/2 + LANDING_SKID_HEIGHT + 1.5) + height, 0.0]);
             multRotationX(-inclination);
-            multRotationY(-90) //+ incHelicopter*2500);
+            multRotationY(-90 + incHelicopter*2500);
             helicopter();
             mv = modelView();
         popMatrix(); 
@@ -320,9 +319,9 @@ function setup(shaders)
 
             let currentTime = time - boxes[i].startTime;
 
-            let x = boxes[i].initPos[0] + boxes[i].initVel[0] * currentTime + 0.5 * boxes[i].acceleration[0]*Math.pow(currentTime, 2);
+            let x = boxes[i].initPos[0] //+ boxes[i].initVel[0] * currentTime + 0.5 * boxes[i].acceleration[0]*Math.pow(currentTime, 2);
             let y = boxes[i].initPos[1] + boxes[i].initVel[1] * currentTime + 0.5 * boxes[i].acceleration[1]*Math.pow(currentTime, 2);
-            let z = boxes[i].initPos[2] + boxes[i].initVel[2] * currentTime + 0.5 * boxes[i].acceleration[2]*Math.pow(currentTime, 2);
+            let z = boxes[i].initPos[2] //+ boxes[i].initVel[2] * currentTime + 0.5 * boxes[i].acceleration[2]*Math.pow(currentTime, 2);
               
             if(currentTime < 5) {
                 pushMatrix();
