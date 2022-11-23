@@ -36,7 +36,7 @@ let animation = true;   // Animation is running
 let zoom = 35.0;
 let height = 0; 
 let inclination = 0;
-let slowHelicopter = false;
+let movingHelicopter = false;
 let slowBlade = false;
 let gama ;
 let theta ;
@@ -73,9 +73,9 @@ const MAST_LENGTH = 0.2;
 const MAST_HEIGHT = 0.6;
 const MAST_WIDTH = 0.2;
 
-const MAX_SPEED = 0.008;
+const MAX_SPEED = 0.0035;
 const MAX_ANGLE = 30;
-const MIN_HEIGHT = LANDING_SKID_LENGTH*0.5 
+const MIN_HEIGHT = Math.round(LANDING_SKID_LENGTH*0.5) //sin(30) = 0.5
 const MAX_HEIGHT = 30
 const RADIUS = 30
 const VP_DISTANCE = 50
@@ -100,35 +100,32 @@ function setup(shaders)
 
 
     document.onkeyup = function(event) {
-        if (event.code == 'Space') {
-            mModel = mult(inverse(mView),mv);
-            heliPos = mult(mModel, vec4(0, 0, 0, 1))
-            let finalPosX = 0;   
-            let finalPosZ = 0;
-            let acceleration = vec3(0, -9.8, 0);
-            
-            let angle = Math.acos(heliPos[0]/RADIUS)
-            if(heliPos[2] > 0)
-                angle = -angle + 2 * Math.PI
-
-            let angularVelocity = incHelicopter * 2 * Math.PI * 60 * 0.2
-            let velocity = vec3(RADIUS * angularVelocity * Math.sin(angle) * (-1), 0, RADIUS * angularVelocity * Math.cos(angle) * (-1))
-            boxes.push({startTime : time, initPos : heliPos, initVel : velocity, finalPos : [finalPosX, finalPosZ], acceleration: acceleration});
-        }
-
         switch(event.key) {
             case "ArrowLeft":
-                slowHelicopter = true;
+                movingHelicopter = false;
                 break;
-        }
+            case " ":
+                mModel = mult(inverse(mView),mv);
+                heliPos = mult(mModel, vec4(0, 0, 0, 1))
+                let finalPosX = 0;   
+                let finalPosZ = 0;
+                let acceleration = vec3(0, -9.8, 0);
+                
+                let angle = Math.acos(heliPos[0]/RADIUS)
+                if(heliPos[2] > 0)
+                    angle = -angle + 2 * Math.PI
+    
+                let angularVelocity = incHelicopter * 2 * Math.PI * 60 * 0.5
+                let velocity = vec3(RADIUS * angularVelocity * Math.sin(angle) * (-1), 0, RADIUS * angularVelocity * Math.cos(angle) * (-1))
+                boxes.push({startTime : time, initPos : heliPos, initVel : velocity, finalPos : [finalPosX, finalPosZ], acceleration: acceleration});
 
-
+                break;
+            }
     }
 
     document.onkeydown = function(event) {
     
-        switch(event.key) {
-            
+        switch(event.key) { 
             case 'w':
                 mode = gl.LINES; 
                 break;
@@ -139,27 +136,25 @@ function setup(shaders)
                 animation = !animation;
                 break;
             case "ArrowLeft":
-                slowHelicopter = false;
-
-                if(incHelicopter < MAX_SPEED && height > 0)
-                    incHelicopter += 0.0002
-           
+                if(height > 0)
+                    movingHelicopter = true;
                 break;
             case "ArrowUp":
-                if(height == 0)
+                if(height == 0) {
                     height = MIN_HEIGHT;
+                }
                 else if(height < MAX_HEIGHT){
                     height += 1;
                 }
                 break;
             case "ArrowDown":
-                if(height >= MIN_HEIGHT) {
+                if (height > MIN_HEIGHT) {
                     height -= 1;
                 }
                 else {
                     slowBlade = true;
                     height = 0;
-                    sleep(2000).then(() => {slowBlade = false;});
+                    sleep(2000).then(() => {slowBlade = false; bladeSpeed = 0});
                 }
                 break;
             case "1":
@@ -189,7 +184,6 @@ function setup(shaders)
                 view1 = false;
                 mProjection = perspective(VP_DISTANCE, aspect, VP_DISTANCE/10 , 4*VP_DISTANCE);
                 view5 = true;
-                
                 break;
          }
     };
@@ -250,6 +244,7 @@ function setup(shaders)
 
 
     function render() {
+
         gama = document.getElementById('1').value;
         theta = document.getElementById('2').value;
 
@@ -264,29 +259,35 @@ function setup(shaders)
         }else
             mProjection = ortho(-aspect*zoom,aspect*zoom, -zoom, zoom, -100, 100);
 
-    
-
         if(animation) {
-            if(slowHelicopter && incHelicopter >= 0.0001) {
-                incHelicopter -= 0.0001
-                if(incHelicopter < 0.0001)
-                    incHelicopter = 0
-
+            if(movingHelicopter) {
+                if(incHelicopter < MAX_SPEED && height > 0)
+                    incHelicopter += 0.00001
             }
+            else {
+                if(incHelicopter >= 0.00001) {
+                    incHelicopter -= 0.00001
+                    if(incHelicopter < 0.00001)
+                        incHelicopter = 0
+
+                }
+            }
+            
             if(slowBlade && bladeSpeed >= 3) {
                 bladeSpeed -= 3;
             }
+            else
+                bladeSpeed = 2 * 360 * time;
 
             time += speed;
+            helicopterSpeed += incHelicopter;
+            
         } 
 
-        helicopterSpeed += incHelicopter;
-
         if(height == 0) {
+            bladeSpeed = 0;
             incHelicopter = 0;
         }
-        else
-            bladeSpeed = 2 * 360 * time;
     
         inclination = incHelicopter * MAX_ANGLE / MAX_SPEED;
 
@@ -308,7 +309,7 @@ function setup(shaders)
         popMatrix();
      
         pushMatrix();
-            multRotationY(helicopterSpeed*360);
+            multRotationY(360 * helicopterSpeed);
             multTranslation([RADIUS, (CABIN_HEIGHT/2 + LANDING_SKID_HEIGHT + 1.5) + height, 0.0]);
             multRotationX(-inclination);
             multRotationY(270)
@@ -319,7 +320,7 @@ function setup(shaders)
         
         for(let i = 0; i< boxes.length ; i++){
         
-            gl.uniform3fv(uColor, vec3(1.0, 0.0, 0.0));
+            gl.uniform3fv(uColor, vec3(0.62, 0.43, 0.71));
 
             let currentTime = time - boxes[i].startTime;
 
@@ -352,7 +353,7 @@ function setup(shaders)
     function box() {
         multScale([2, 2, 2]);
         uploadModelView();
-        CUBE.draw(gl, program, mode);
+        TORUS.draw(gl, program, mode);
     }
 
     function cabin() {
@@ -450,13 +451,18 @@ function setup(shaders)
         pushMatrix();
             multTranslation([TAIL_CONE_LENGTH + REAR_BLADE_LENGTH/2 + 0.6, TAIL_HEIGHT + REAR_BLADE_HEIGHT, TAIL_WIDTH]);
             multRotationZ(bladeSpeed);
-            multRotationY(180);
+            rearBlades();
+        popMatrix();
+    
+    }
+
+    function rearBlades() {
+        pushMatrix();
             rearBlade();
         popMatrix();
-        
+
         pushMatrix();
-            multTranslation([TAIL_CONE_LENGTH + REAR_BLADE_LENGTH/2 + 0.6, TAIL_HEIGHT + REAR_BLADE_HEIGHT, TAIL_WIDTH]);
-            multRotationZ(bladeSpeed);
+            multRotationY(180);
             rearBlade();
         popMatrix();
     }
@@ -504,13 +510,15 @@ function setup(shaders)
         popMatrix();
 
         pushMatrix();
-            landingSkids();
-        popMatrix();
-
-        pushMatrix();
             landingSkidSupporters();
         popMatrix();
 
+        gl.uniform3fv(uColor, vec3(0.20, 0.35, 0.71));
+        pushMatrix();
+            landingSkids();
+        popMatrix();
+
+        gl.uniform3fv(uColor, vec3(0.20, 0.35, 0.71));
         pushMatrix();
             masts();
         popMatrix();
@@ -520,11 +528,12 @@ function setup(shaders)
             cabin();
         popMatrix();
 
-        gl.uniform3fv(uColor, vec3(1.0, 0.24, 0.76));
+        
         pushMatrix();
             tailCone();
         popMatrix();
 
+        
         pushMatrix();
             tailFin();
         popMatrix();
@@ -1147,7 +1156,6 @@ function setup(shaders)
                 towerPlanet();
             popMatrix();
 
-            gl.uniform3fv(uColor, vec3(0.9, 0.38, 0.73));
             pushMatrix();
                 multTranslation([-0.8, 0.01, 0.7]);
                 multScale([0.5, 0.5, 0.5]);
@@ -1164,12 +1172,12 @@ function setup(shaders)
     }
 
     function batMobile(){
-        gl.uniform3fv(uColor, vec3(0.2, 0.2, 0.2));
+        gl.uniform3fv(uColor, vec3(0.18, 0.1, 0.25));
         pushMatrix();
             batMobileBase();
         popMatrix();
 
-        gl.uniform3fv(uColor, vec3(0.1, 0.1, 0.1));
+        gl.uniform3fv(uColor, vec3(0.09, 0.07, 0.11));
         pushMatrix();
             multTranslation([-0.19, 0.114, 0.17]);
             wheelsSquad();
@@ -1292,7 +1300,7 @@ function setup(shaders)
             cabinP();
         popMatrix();
 
-        gl.uniform3fv(uColor, vec3(0.1, 0.1, 0.1));
+        
         pushMatrix();
             multTranslation([0.24, 0.163, 0.17]);
             batWings();
