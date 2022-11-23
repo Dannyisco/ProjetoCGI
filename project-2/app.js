@@ -115,7 +115,7 @@ function setup(shaders)
                 if(heliPos[2] > 0)
                     angle = -angle + 2 * Math.PI
     
-                let angularVelocity = incHelicopter * 2 * Math.PI * 60 * 0.5
+                let angularVelocity = incHelicopter * 2 * Math.PI * 60 * 0.25
                 let velocity = vec3(RADIUS * angularVelocity * Math.sin(angle) * (-1), 0, RADIUS * angularVelocity * Math.cos(angle) * (-1))
                 boxes.push({startTime : time, initPos : heliPos, initVel : velocity, finalPos : [finalPosX, finalPosZ], acceleration: acceleration});
 
@@ -351,9 +351,9 @@ function setup(shaders)
     }
 
     function box() {
-        multScale([2, 2, 2]);
+        multScale([10, 10, 10]);
         uploadModelView();
-        TORUS.draw(gl, program, mode);
+        BUNNY.draw(gl, program, mode);
     }
 
     function cabin() {
@@ -399,17 +399,17 @@ function setup(shaders)
 
     function landingSkidSupporters() {
         pushMatrix();
-            left();
+            leftSkids();
         popMatrix(); 
 
         pushMatrix();
             multRotationY(180);
-            left();
+            leftSkids();
         popMatrix(); 
         
     }
     
-    function left() {
+    function leftSkids() {
         pushMatrix();
             landingSkidSuporter();
         popMatrix(); 
@@ -430,22 +430,9 @@ function setup(shaders)
     }
 
     function blades() {
-        
         pushMatrix();
             multRotationY(bladeSpeed);
-            multRotationY(120);
-            topBlade();
-        popMatrix();
-
-        pushMatrix()
-            multRotationY(bladeSpeed);
-            multRotationY(240);
-            topBlade();
-        popMatrix();
-
-        pushMatrix();
-            multRotationY(bladeSpeed);
-            topBlade();
+            topBlades();
         popMatrix();
         
         pushMatrix();
@@ -454,6 +441,22 @@ function setup(shaders)
             rearBlades();
         popMatrix();
     
+    }
+
+    function topBlades() {
+        pushMatrix();
+            multRotationY(240);
+            topBlade();
+        popMatrix();
+
+        pushMatrix();
+            multRotationY(120);
+            topBlade();
+        popMatrix();
+
+        pushMatrix();
+            topBlade();
+        popMatrix();
     }
 
     function rearBlades() {
@@ -503,6 +506,8 @@ function setup(shaders)
         popMatrix();
     }
 
+    
+
     function helicopter() {
         gl.uniform3fv(uColor, vec3(0.82, 0.28, 0.69));
         pushMatrix();
@@ -533,12 +538,10 @@ function setup(shaders)
             tailCone();
         popMatrix();
 
-        
         pushMatrix();
             tailFin();
         popMatrix();
 
-        
     }
 
    
@@ -654,7 +657,6 @@ function setup(shaders)
 
 
     function tower() {
-        
         pushMatrix();
             multTranslation([0.0, 0.6, 0.0]);
             towerMast();
