@@ -390,7 +390,6 @@ function setup(shaders)
 
     function landingSkid(){
         multTranslation([0.0, - LANDING_SKID_HEIGHT/2 - CABIN_HEIGHT/2 - 1.5, CABIN_WIDTH])
-        
         multScale([LANDING_SKID_LENGTH, LANDING_SKID_HEIGHT , LANDING_SKID_WIDTH]);
         multRotationZ(-90);
         uploadModelView();
@@ -399,17 +398,17 @@ function setup(shaders)
 
     function landingSkidSupporters() {
         pushMatrix();
-            leftSkids();
+            leftSkidSupporters();
         popMatrix(); 
 
         pushMatrix();
             multRotationY(180);
-            leftSkids();
+            leftSkidSupporters();
         popMatrix(); 
         
     }
     
-    function leftSkids() {
+    function leftSkidSupporters() {
         pushMatrix();
             landingSkidSuporter();
         popMatrix(); 
@@ -533,7 +532,6 @@ function setup(shaders)
             cabin();
         popMatrix();
 
-        
         pushMatrix();
             tailCone();
         popMatrix();
