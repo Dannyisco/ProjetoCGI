@@ -144,12 +144,12 @@ function setup(shaders)
                     height = MIN_HEIGHT;
                 }
                 else if(height < MAX_HEIGHT){
-                    height += 1;
+                    height += 0.2;
                 }
                 break;
             case "ArrowDown":
                 if (height > MIN_HEIGHT) {
-                    height -= 1;
+                    height -= 0.3;
                 }
                 else {
                     slowBlade = true;
@@ -256,6 +256,7 @@ function setup(shaders)
             eyePos = mult(mModel, vec4(-CABIN_LENGTH/2, 0, 0, 1));
             atPos = mult(mModel, vec4(-(CABIN_LENGTH/2 + 0.1 + VP_DISTANCE), 0, 0, 1));
             mView = lookAt([eyePos[0], eyePos[1], eyePos[2]], [atPos[0], atPos[1], atPos[2]], [0, 1 , 0]);
+
         }else
             mProjection = ortho(-aspect*zoom,aspect*zoom, -zoom, zoom, -100, 100);
 
@@ -266,7 +267,7 @@ function setup(shaders)
             }
             else {
                 if(incHelicopter >= 0.00001) {
-                    incHelicopter -= 0.00001
+                    incHelicopter -= 0.00005
                     if(incHelicopter < 0.00001)
                         incHelicopter = 0
 
