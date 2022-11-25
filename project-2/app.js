@@ -37,7 +37,6 @@ let zoom = 35.0;
 let height = 0; 
 let inclination = 0;
 let movingHelicopter = false;
-let slowBlade = false;
 let gama ;
 let theta ;
 let eyePos = 0.0
@@ -75,7 +74,7 @@ const MAST_WIDTH = 0.2;
 
 const MAX_SPEED = 0.0035;
 const MAX_ANGLE = 30;
-const MIN_HEIGHT = LANDING_SKID_LENGTH*0.5 //sin(30) = 0.5
+const MIN_HEIGHT = LANDING_SKID_LENGTH*0.25
 const MAX_HEIGHT = 30
 const RADIUS = 30
 const VP_DISTANCE = 50
@@ -152,9 +151,7 @@ function setup(shaders)
                     height -= 0.3;
                 }
                 else {
-                    slowBlade = true;
                     height = 0;
-                    sleep(2000).then(() => {slowBlade = false; bladeSpeed = 0});
                 }
                 break;
             case "1":
@@ -222,11 +219,6 @@ function setup(shaders)
         gl.viewport(0,0,canvas.width, canvas.height);
         mProjection = ortho(-aspect*zoom, aspect*zoom, -zoom, zoom, -100, 100);
     }
-
-    
-    function sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
     
     function uploadProjection()
     {
@@ -261,33 +253,18 @@ function setup(shaders)
             mProjection = ortho(-aspect*zoom,aspect*zoom, -zoom, zoom, -100, 100);
 
         if(animation) {
-            if(movingHelicopter) {
-                if(incHelicopter < MAX_SPEED && height > 0)
-                    incHelicopter += 0.00001
-            }
-            else {
-                if(incHelicopter >= 0.00001) {
-                    incHelicopter -= 0.00005
-                    if(incHelicopter < 0.00001)
-                        incHelicopter = 0
-
-                }
-            }
+            helicopterMovement();
             
-            if(slowBlade && bladeSpeed >= 3) {
-                bladeSpeed -= 3;
-            }
-            else if(height > 0)
+            if(height > 0)
                 bladeSpeed = 3 * 360 * time;
 
             time += speed;
             helicopterSpeed += incHelicopter;
             
+            if(height == 0) {
+                incHelicopter = 0;
+            }
         } 
-
-        if(height == 0) {
-            incHelicopter = 0;
-        }
     
         inclination = incHelicopter * MAX_ANGLE / MAX_SPEED;
 
@@ -298,16 +275,47 @@ function setup(shaders)
         gl.useProgram(program);
 
         uploadProjection(mProjection);
-       
         
         loadMatrix(mView);
 
         uColor = gl.getUniformLocation(program, "uColor");
         
+        drawBackgroundScene();
+        drawPlane();
+        drawHelicopter();
+        boxesMovement(boxes);
+
+    }
+
+    function helicopterMovement() {
+        if(movingHelicopter) {
+            if(incHelicopter < MAX_SPEED && height > 0)
+                incHelicopter += 0.00001
+        }
+        else {
+            if(incHelicopter >= 0.00001) {
+                incHelicopter -= 0.00001
+                if(incHelicopter < 0.00001)
+                    incHelicopter = 0
+
+            }
+        }
+    }
+
+    function drawBackgroundScene() {
         pushMatrix();
             background();
+        popMatrix()
+    }
+
+    function drawPlane() {
+        gl.uniform3fv(uColor, vec3(0.07, 0.09, 0.19));
+        pushMatrix();
+            plane();
         popMatrix();
-     
+    }
+
+    function drawHelicopter() {
         pushMatrix();
             multRotationY(360 * helicopterSpeed);
             multTranslation([RADIUS, (CABIN_HEIGHT/2 + LANDING_SKID_HEIGHT + 1.5) + height, 0.0]);
@@ -316,8 +324,9 @@ function setup(shaders)
             helicopter();
             mv = modelView();
         popMatrix(); 
-    
-        
+    }
+
+    function boxesMovement(boxes) {
         for(let i = 0; i< boxes.length ; i++){
         
             gl.uniform3fv(uColor, vec3(0.62, 0.43, 0.71));
@@ -347,7 +356,6 @@ function setup(shaders)
             }
 
          }
-
     }
 
     function box() {
@@ -509,6 +517,7 @@ function setup(shaders)
 
     function helicopter() {
         gl.uniform3fv(uColor, vec3(0.82, 0.28, 0.69));
+        gl.uniform3fv(uColor, vec3(0.10, 0.46, 0.28));
         pushMatrix();
             blades();
         popMatrix();
@@ -518,11 +527,13 @@ function setup(shaders)
         popMatrix();
 
         gl.uniform3fv(uColor, vec3(0.20, 0.35, 0.71));
+        gl.uniform3fv(uColor, vec3(0.45, 0.24, 0.76));
         pushMatrix();
             landingSkids();
         popMatrix();
 
         gl.uniform3fv(uColor, vec3(0.20, 0.35, 0.71));
+        
         pushMatrix();
             masts();
         popMatrix();
@@ -653,8 +664,21 @@ function setup(shaders)
             CUBE.draw(gl, program, mode);
     }
 
+    function tower2() {
+        pushMatrix();
+            multTranslation([0.0, 0.6, 0.0]);
+            towerMast();
+        popMatrix();
 
-    function tower() {
+        pushMatrix();
+            multTranslation([0.0, 0.0, 0.0]);
+            multScale([1.2, 2.0, 1.2])
+            towerHalf();
+        popMatrix();
+    }
+    
+
+    function tower1() {
         pushMatrix();
             multTranslation([0.0, 0.6, 0.0]);
             towerMast();
@@ -1129,13 +1153,19 @@ function setup(shaders)
             pushMatrix();
                 multTranslation([0.8 , 0.0, -0.8]);
                 multScale([1.1, 1.3, 1.3]);
-                tower();
+                tower1();
             popMatrix();
 
             pushMatrix();
                 multTranslation([0.8 , 0.0, 0.8]);
                 multScale([1.3, 1.5, 1.5]);
-                tower();
+                tower2();
+            popMatrix();
+
+            pushMatrix();
+                multTranslation([-0.1 , 0.0,-1.0]);
+                multScale([1.3, 1.3, 1.3]);
+                tower2();
             popMatrix();
             
             pushMatrix();
@@ -1163,11 +1193,6 @@ function setup(shaders)
             popMatrix();
 
         popMatrix()
-
-        gl.uniform3fv(uColor, vec3(0.07, 0.09, 0.19));
-        pushMatrix();
-            plane();
-        popMatrix();
 
     }
 
