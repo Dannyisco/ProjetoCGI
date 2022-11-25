@@ -13,7 +13,7 @@ import * as TORUS from '../../libs/objects/torus.js';
 let gl;
 let uColor;
 
-let mv;
+let heliModelView;
 let mModel;
 let heliPos;
 
@@ -22,7 +22,6 @@ let view5 = false;
 
 let time = 0;  
 let speed = 1/60.0; 
-let boxMass;
 
 
 let boxes = [];
@@ -79,6 +78,11 @@ const MAX_HEIGHT = 30
 const RADIUS = 30
 const VP_DISTANCE = 50
 
+//box
+const BOX_SIZE = [0.15, 0.15, 0.15];
+const BOX_HEIGHT = 1.5;
+
+
 function setup(shaders)
 {
     let canvas = document.getElementById("gl-canvas");
@@ -104,7 +108,7 @@ function setup(shaders)
                 movingHelicopter = false;
                 break;
             case " ":
-                mModel = mult(inverse(mView),mv);
+                mModel = mult(inverse(mView),heliModelView);
                 heliPos = mult(mModel, vec4(0, 0, 0, 1))
                 let finalPosX = 0;   
                 let finalPosZ = 0;
@@ -112,12 +116,11 @@ function setup(shaders)
                 
                 let angle = Math.acos(heliPos[0]/RADIUS)
                 if(heliPos[2] > 0)
-                    angle = -angle + 2 * Math.PI
+                    angle = -angle + 2 * Math.PI;
     
-                let angularVelocity = incHelicopter * 2 * Math.PI * 60 * 0.25
+                let angularVelocity = incHelicopter * 2 * Math.PI * 60 * 0.25;
                 let velocity = vec3(RADIUS * angularVelocity * Math.sin(angle) * (-1), 0, RADIUS * angularVelocity * Math.cos(angle) * (-1))
                 boxes.push({startTime : time, initPos : heliPos, initVel : velocity, finalPos : [finalPosX, finalPosZ], acceleration: acceleration});
-
                 break;
             }
     }
@@ -244,7 +247,7 @@ function setup(shaders)
             mView = mult(lookAt([0,17,1], [0,17,0], [0,1,0]),mult(rotateX(gama), rotateY(theta)));
         
         if(view5) {
-            mModel = mult(inverse(mView),mv);
+            mModel = mult(inverse(mView),heliModelView);
             eyePos = mult(mModel, vec4(-CABIN_LENGTH/2, 0, 0, 1));
             atPos = mult(mModel, vec4(-(CABIN_LENGTH/2 + 0.1 + VP_DISTANCE), 0, 0, 1));
             mView = lookAt([eyePos[0], eyePos[1], eyePos[2]], [atPos[0], atPos[1], atPos[2]], [0, 1 , 0]);
@@ -283,20 +286,20 @@ function setup(shaders)
         drawBackgroundScene();
         drawPlane();
         drawHelicopter();
-        boxesMovement(boxes);
+        updateBoxesMovement(boxes);
 
     }
 
     function helicopterMovement() {
         if(movingHelicopter) {
             if(incHelicopter < MAX_SPEED && height > 0)
-                incHelicopter += 0.00001
+                incHelicopter += 0.00001;
         }
         else {
             if(incHelicopter >= 0.00001) {
-                incHelicopter -= 0.00001
+                incHelicopter -= 0.00004;
                 if(incHelicopter < 0.00001)
-                    incHelicopter = 0
+                    incHelicopter = 0;
 
             }
         }
@@ -305,7 +308,7 @@ function setup(shaders)
     function drawBackgroundScene() {
         pushMatrix();
             background();
-        popMatrix()
+        popMatrix();
     }
 
     function drawPlane() {
@@ -320,13 +323,13 @@ function setup(shaders)
             multRotationY(360 * helicopterSpeed);
             multTranslation([RADIUS, (CABIN_HEIGHT/2 + LANDING_SKID_HEIGHT + 1.5) + height, 0.0]);
             multRotationX(-inclination);
-            multRotationY(270)
+            multRotationY(270);
             helicopter();
-            mv = modelView();
+            heliModelView = modelView();
         popMatrix(); 
     }
 
-    function boxesMovement(boxes) {
+    function updateBoxesMovement(boxes) {
         for(let i = 0; i< boxes.length ; i++){
         
             gl.uniform3fv(uColor, vec3(0.62, 0.43, 0.71));
@@ -336,16 +339,17 @@ function setup(shaders)
             let x = boxes[i].initPos[0] + boxes[i].initVel[0] * currentTime + 0.5 * boxes[i].acceleration[0]*Math.pow(currentTime, 2);
             let y = boxes[i].initPos[1] + boxes[i].initVel[1] * currentTime + 0.5 * boxes[i].acceleration[1]*Math.pow(currentTime, 2);
             let z = boxes[i].initPos[2] + boxes[i].initVel[2] * currentTime + 0.5 * boxes[i].acceleration[2]*Math.pow(currentTime, 2);
-              
+        
             if(currentTime < 5) {
                 pushMatrix();
-                    if(y - 2/2 > 0) {
+                    if(y - BOX_HEIGHT/2 > 0) {
                         multTranslation([x, y, z]); 
                         boxes[i].finalPos[0] = x;
                         boxes[i].finalPos[1] = z;
                     }
                     else
-                        multTranslation([boxes[i].finalPos[0], 2/2,  boxes[i].finalPos[1]]);            
+                        multTranslation([boxes[i].finalPos[0], BOX_HEIGHT/2,  boxes[i].finalPos[1]]);  
+                    multScale(BOX_SIZE);         
                     box();
                 popMatrix(); 
 
@@ -359,10 +363,124 @@ function setup(shaders)
     }
 
     function box() {
-        multScale([10, 10, 10]);
-        uploadModelView();
-        BUNNY.draw(gl, program, mode);
+        //gl.uniform3fv(uColor, vec3(0.69, 0.73, 0.73));
+        gl.uniform3fv(uColor, vec3(0.0, 0.0, 0.0));
+        pushMatrix();
+            multScale([10, 10, 10]);
+            uploadModelView();
+            CUBE.draw(gl, program, mode);
+        popMatrix();
+
+
+        pushMatrix();
+            multRotationY(90);
+            radioactiveSymbol();
+        popMatrix();
+
+        pushMatrix();
+            multRotationY(-90);
+            radioactiveSymbol();
+        popMatrix();
+        pushMatrix();
+        multRotationX(90);
+            radioactiveSymbol();
+        popMatrix();
+        pushMatrix();
+        multRotationZ(-90);
+            radioactiveSymbol();
+        popMatrix();
+        pushMatrix();
+        multRotationZ(90);
+            radioactiveSymbol();
+        popMatrix();
+
+        pushMatrix();
+        multRotationX(-90);
+            radioactiveSymbol();
+        popMatrix();
     }
+
+
+    function radioactiveSymbol(){
+        /*gl.uniform3fv(uColor, vec3(0.0, 0.0, 0.0));
+        pushMatrix();
+            blackPlan();
+        popMatrix();
+       */
+        pushMatrix();
+            middleCircle();
+        popMatrix();
+        
+        gl.uniform3fv(uColor, vec3(0.96, 0.92, 0.0));
+        pushMatrix();
+            multRotationY(120);
+            triangle();
+        popMatrix();
+        
+        pushMatrix();
+            multRotationY(240);
+            triangle();
+        popMatrix();
+
+        pushMatrix();
+            triangle();
+        popMatrix();
+        
+        
+    }
+
+    function triangle(){
+        multTranslation([0.0, 5.31 , -2.1]);
+        multRotationX(90);
+        multScale([3, 3, 0.1]);
+        uploadModelView();
+        PYRAMID.draw(gl, program, mode);
+    }
+
+    function middleCircle() {
+        gl.uniform3fv(uColor, vec3(0.96, 0.92, 0.0));
+        pushMatrix();
+        multTranslation([0.0, 5.2 , 0.0]);
+        multScale([9, 0.2, 9]);
+        uploadModelView();
+        CYLINDER.draw(gl, program, mode);
+        popMatrix();
+
+        gl.uniform3fv(uColor, vec3(0.0, 0.0, 0.0));
+        pushMatrix();
+        multTranslation([0.0, 5.21 , 0.0]);
+        multScale([8, 0.2, 8]);
+        uploadModelView();
+        CYLINDER.draw(gl, program, mode);
+        popMatrix();
+
+        gl.uniform3fv(uColor, vec3(0.0, 0.0, 0.0));
+        pushMatrix();
+        multTranslation([0.0, 5.24 , 0.0]);
+        multScale([3, 0.2, 3]);
+        uploadModelView();
+        CYLINDER.draw(gl, program, mode);
+        popMatrix();
+
+        gl.uniform3fv(uColor, vec3(0.96, 0.92, 0.0));
+        pushMatrix();
+        multTranslation([0.0, 5.25 , 0.0]);
+        multScale([2, 0.2, 2]);
+        uploadModelView();
+        CYLINDER.draw(gl, program, mode);
+        popMatrix();
+
+    }
+
+
+
+    function blackPlan() {
+        multTranslation([0.0, 5.1 , 0.0]);
+        multScale([10, 0.1, 10]);
+        uploadModelView();
+        CUBE.draw(gl, program, mode);
+    }
+
 
     function cabin() {
         multScale([CABIN_LENGTH, CABIN_HEIGHT, CABIN_WIDTH]);
