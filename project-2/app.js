@@ -75,7 +75,7 @@ const MAST_WIDTH = 0.2;
 
 const MAX_SPEED = 0.0035;
 const MAX_ANGLE = 30;
-const MIN_HEIGHT = Math.round(LANDING_SKID_LENGTH*0.5) //sin(30) = 0.5
+const MIN_HEIGHT = LANDING_SKID_LENGTH*0.5 //sin(30) = 0.5
 const MAX_HEIGHT = 30
 const RADIUS = 30
 const VP_DISTANCE = 50
@@ -277,8 +277,8 @@ function setup(shaders)
             if(slowBlade && bladeSpeed >= 3) {
                 bladeSpeed -= 3;
             }
-            else
-                bladeSpeed = 2 * 360 * time;
+            else if(height > 0)
+                bladeSpeed = 3 * 360 * time;
 
             time += speed;
             helicopterSpeed += incHelicopter;
@@ -286,7 +286,6 @@ function setup(shaders)
         } 
 
         if(height == 0) {
-            bladeSpeed = 0;
             incHelicopter = 0;
         }
     
