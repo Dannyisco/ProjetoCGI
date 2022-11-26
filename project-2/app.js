@@ -294,6 +294,7 @@ function setup(shaders)
 
     function drawBackgroundScene() {
         pushMatrix();
+            multScale([40.0, 40.0, 40.0]);
             background();
         popMatrix();
     }
@@ -301,7 +302,10 @@ function setup(shaders)
     function drawPlane() {
         gl.uniform3fv(uColor, vec3(0.07, 0.09, 0.19));
         pushMatrix();
-            plane();
+            multTranslation([0.0, -0.5, 0.0]);
+            multScale([100.0, 1, 100.0]);
+            uploadModelView();
+            CUBE.draw(gl, program, mode);;
         popMatrix();
     }
 
@@ -1337,73 +1341,68 @@ function setup(shaders)
     }
 
     function background() {
-        
+
         pushMatrix();
             roads();
         popMatrix();
 
-        pushMatrix()
-        multScale([40.0, 40.0, 40.0]);
-
-            pushMatrix();
-                multTranslation([0.06 , 0.0, 0.02]);
-                multScale([1.5, 1.0, 1.5]);
-                helipad();
-            popMatrix();
+        
+        pushMatrix();
+            multTranslation([0.06, 0.0, 0.02]);
+            multScale([1.5, 1.0, 1.5]);
+            helipad();
+        popMatrix();
 
        
-            pushMatrix();
-                multTranslation([0.8 , 0.0, -0.8]);
-                multScale([1.1, 1.3, 1.3]);
-                tower1();
-            popMatrix();
+        pushMatrix();
+            multTranslation([0.8 , 0.0, -0.8]);
+            multScale([1.1, 1.3, 1.3]);
+            tower1();
+        popMatrix();
 
-            pushMatrix();
-                multTranslation([0.9 , 0.0, 0.8]);
-                multScale([1.3, 1.5, 1.5]);
-                tower2();
-            popMatrix();
+        pushMatrix();
+            multTranslation([0.9 , 0.0, 0.8]);
+            multScale([1.3, 1.5, 1.5]);
+            tower2();
+        popMatrix();
 
-            pushMatrix();
-                multTranslation([0.55 , 0.0, 0.9]);
-                multScale([1.3, 1.3, 1.3]);
-                tower2();
-            popMatrix();
+        pushMatrix();
+            multTranslation([0.55 , 0.0, 0.9]);
+            multScale([1.3, 1.3, 1.3]);
+            tower2();
+        popMatrix();
             
-            pushMatrix();
-                multTranslation([-0.6, -0.005, -0.5]);
-                multRotationY(100)
-                towerOfAvengers();
-            popMatrix();
-
+        pushMatrix();
+            multTranslation([-0.6, -0.005, -0.5]);
+            multRotationY(100)
+            towerOfAvengers();
+        popMatrix();
             
+        pushMatrix();
+            multTranslation([0.4, 0.0, -1.0]);
+            multRotationY(-15)
+            doofenshmirtzEvilInc();
+        popMatrix();
+
+        pushMatrix();
+            towerPlanet();
+        popMatrix();
+
+
+        pushMatrix()
+            multTranslation([-0.85, 0.0, 0.80]);
+            gl.uniform3fv(uColor, vec3(0.18, 0.1, 0.25));
+
             pushMatrix();
-                multTranslation([0.4, 0.0, -1.0]);
-                multRotationY(-15)
-                doofenshmirtzEvilInc();
+                batMobileBase();
             popMatrix();
 
-            
             pushMatrix();
-                towerPlanet();
+                multTranslation([0, 0.07, 0]);
+                multScale([0.5, 0.5, 0.5]);
+                batMobile();
             popMatrix();
-
-
-            pushMatrix()
-                multTranslation([-0.85, 0.0, 0.80]);
-                gl.uniform3fv(uColor, vec3(0.18, 0.1, 0.25));
-
-                pushMatrix();
-                    batMobileBase();
-                popMatrix();
-
-                pushMatrix();
-                    multTranslation([0, 0.07, 0]);
-                    multScale([0.5, 0.5, 0.5]);
-                    batMobile();
-                popMatrix();
-
-            popMatrix()
+        popMatrix()
 
     }
 
@@ -1842,13 +1841,6 @@ function setup(shaders)
     }
 
     function floor(){
-        uploadModelView();
-        CUBE.draw(gl, program, mode);
-    }
-
-    function plane(){
-        multTranslation([0.0, -0.5, 0.0]);
-        multScale([100.0, 1, 100.0]);
         uploadModelView();
         CUBE.draw(gl, program, mode);
     }
