@@ -5,7 +5,7 @@ body {
     /*display: flex;*/
     margin: 0px;
     overflow: hidden; /*  Disable scrollbars */
-    background-color: rgb(126, 182, 228);
+    background-color: rgb(77, 116, 207);
 }
 
 
@@ -38,6 +38,6 @@ body {
   appearance: none;
   width: 10px; /* Set a specific slider handle width */
   height: 10px; /* Slider handle height */
-  background: #7439d3; /* Green background */
+  background: #441f50; /* Green background */
   cursor: pointer; /* Cursor on hover */
 }
