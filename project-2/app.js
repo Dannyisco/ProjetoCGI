@@ -273,7 +273,7 @@ function setup(shaders)
         drawBackgroundScene();
         drawPlane();
         drawHelicopter();
-        updateBoxesMovement(boxes);
+        drawBoxes(boxes);
 
     }
 
@@ -316,7 +316,7 @@ function setup(shaders)
         popMatrix(); 
     }
 
-    function updateBoxesMovement(boxes) {
+    function drawBoxes(boxes) {
         for(let i = 0; i< boxes.length ; i++){
         
             gl.uniform3fv(uColor, vec3(0.62, 0.43, 0.71));
