@@ -79,8 +79,7 @@ const RADIUS = 30
 const VP_DISTANCE = 50
 
 //box
-const BOX_SIZE = [0.15, 0.15, 0.15];
-const BOX_HEIGHT = 1.5;
+const BOX_SIZE = 1.5;
 
 
 function setup(shaders)
@@ -188,18 +187,6 @@ function setup(shaders)
          }
     };
 
-    /*Sobe com inclinação 0 e sem andar às voltas
-                premindo left vai pra esquerda e com inclinação dependendo da velocidade
-                larga-se o left e para de andar às voltas com a inclinação voltando lentamente ao 0.
-
-                Acho q a velocidade nn depende da altura
-
-                Quando está no solo e premimos cursorUp é suposto nao descolar logo e ver as helices a girar
-                até uma determinada velocidade e só depois descolar.
-                Ao tocar o solo na descida as helices devem parar de girar lentamente.
-                */
-
-    
     gl.clearColor(0.16, 0.21, 0.41, 1.0);
 
     PYRAMID.init(gl);
@@ -342,14 +329,14 @@ function setup(shaders)
         
             if(currentTime < 5) {
                 pushMatrix();
-                    if(y - BOX_HEIGHT/2 > 0) {
+                    if(y - BOX_SIZE/2 > 0) {
                         multTranslation([x, y, z]); 
                         boxes[i].finalPos[0] = x;
                         boxes[i].finalPos[1] = z;
                     }
                     else
-                        multTranslation([boxes[i].finalPos[0], BOX_HEIGHT/2,  boxes[i].finalPos[1]]);  
-                    multScale(BOX_SIZE);         
+                        multTranslation([boxes[i].finalPos[0], BOX_SIZE/2,  boxes[i].finalPos[1]]);  
+                              
                     box();
                 popMatrix(); 
 
@@ -363,15 +350,12 @@ function setup(shaders)
     }
 
     function box() {
-        
         gl.uniform3fv(uColor, vec3(0.09, 0.07, 0.11));
         pushMatrix();
-            multScale([10, 10, 10]);
+            multScale([BOX_SIZE, BOX_SIZE, BOX_SIZE]);
             uploadModelView();
             CUBE.draw(gl, program, mode);
         popMatrix();
-
-        
 
         pushMatrix();
             radioactiveSymbols();
@@ -383,8 +367,8 @@ function setup(shaders)
         popMatrix();
 
         pushMatrix();
-            multRotationZ(-90);
-            radioactiveSymbol();
+            multRotationZ(90);
+            radioactiveSymbols();
         popMatrix();
         
     }
@@ -393,9 +377,9 @@ function setup(shaders)
         pushMatrix();
             radioactiveSymbol();
         popMatrix();
-
+        
         pushMatrix();
-            multTranslation([0.0, 3.0, 0.0])
+            multRotationZ(180);
             radioactiveSymbol();
         popMatrix();
     }
@@ -422,9 +406,9 @@ function setup(shaders)
     }
 
     function triangle(){
-        multTranslation([0.0, 1.5, -2.1]);
+        multTranslation([0.0, 0.01/2 + BOX_SIZE/2 + 0.05, -0.32]);
         multRotationX(90);
-        multScale([3, 3, 0.1]);
+        multScale([0.45, 0.45, 0.01]);
         uploadModelView();
         PYRAMID.draw(gl, program, mode);
     }
@@ -432,46 +416,37 @@ function setup(shaders)
     function middleCircle() {
         gl.uniform3fv(uColor, vec3(0.69, 0.49, 0.04));
         pushMatrix();
-        multTranslation([0.0, 5.2 , 0.0]);
-        multScale([9, 0.2, 9]);
-        uploadModelView();
-        CYLINDER.draw(gl, program, mode);
+            multTranslation([0.0, 0.01/2 + BOX_SIZE/2 + 0.01 , 0.0]);
+            multScale([1.35, 0.01, 1.35]);
+            uploadModelView();
+            CYLINDER.draw(gl, program, mode);
         popMatrix();
 
         gl.uniform3fv(uColor, vec3(0.09, 0.07, 0.11));
         pushMatrix();
-        multTranslation([0.0, 5.21 , 0.0]);
-        multScale([8, 0.2, 8]);
-        uploadModelView();
-        CYLINDER.draw(gl, program, mode);
+            multTranslation([0.0, 0.01/2 + BOX_SIZE/2 + 0.02 , 0.0]);
+            multScale([1.2, 0.01, 1.2]);
+            uploadModelView();
+            CYLINDER.draw(gl, program, mode);
         popMatrix();
 
-        
         pushMatrix();
-        multTranslation([0.0, 5.24 , 0.0]);
-        multScale([3, 0.2, 3]);
-        uploadModelView();
-        CYLINDER.draw(gl, program, mode);
+            multTranslation([0.0, 0.01/2 + BOX_SIZE/2 + 0.03 , 0.0]);
+            multScale([0.45, 0.01, 0.45]);
+            uploadModelView();
+            CYLINDER.draw(gl, program, mode);
         popMatrix();
 
         gl.uniform3fv(uColor, vec3(0.69, 0.49, 0.04));
         pushMatrix();
-        multTranslation([0.0, 5.25 , 0.0]);
-        multScale([2, 0.2, 2]);
-        uploadModelView();
-        CYLINDER.draw(gl, program, mode);
+            multTranslation([0.0, 0.01/2 + BOX_SIZE/2 + 0.04 , 0.0]);
+            multScale([0.3, 0.01, 0.3]);
+            uploadModelView();
+            CYLINDER.draw(gl, program, mode);
         popMatrix();
 
     }
 
-
-
-    function blackPlan() {
-        multTranslation([0.0, 5.1 , 0.0]);
-        multScale([10, 0.1, 10]);
-        uploadModelView();
-        CUBE.draw(gl, program, mode);
-    }
 
 
     function cabin() {
