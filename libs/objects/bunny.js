@@ -25,10 +25,30 @@ function init(gl) {
 
 function _build(){
 
+    let xmin = points[0], ymin = points[1], zmin = points[2];
+    let xmax = points[0], ymax = points[1], zmax = points[2];
+
     for(var i = 0; i<points.length; i+=3){
-        //center the rabbit
-        points[i+1] -= 0.1;
+        
+        xmin = Math.min(xmin, points[i]);
+        xmax = Math.max(xmax, points[i]);
+
+        ymin = Math.min(ymin, points[i+1]);
+        ymax = Math.max(ymax, points[i+1]);
+
+        zmin = Math.min(zmin, points[i+2]);
+        zmax = Math.max(zmax, points[i+2]);
+
         pointNormals[i/3] = vec3(0,0,0);
+    }
+
+    let xmed = (xmin + xmax)/2;
+    let zmed = (zmin + zmax)/2;
+
+    for(var i=0; i<points.length; i+=3){
+        points[i] = points[i] - xmed;
+        points[i+1] = points[i+1] - ymin;
+        points[i+2] = points[i+2] - zmed;
     }
 
     for(var i = 0; i<faces.length; i+=3){

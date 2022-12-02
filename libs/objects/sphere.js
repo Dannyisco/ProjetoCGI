@@ -62,12 +62,12 @@ function _build(nlat, nlon)
     // north pole faces
     for(var i=0; i<nlon-1; i++) {
         faces.push(0);
-        faces.push(i+1);
         faces.push(i+2);
+        faces.push(i+1);
     }
     faces.push(0);
-    faces.push(nlon);
     faces.push(1);
+    faces.push(nlon);
     
     // general middle faces
     var offset=1;
@@ -76,33 +76,33 @@ function _build(nlat, nlon)
         for(var j=0; j<nlon-1; j++) {
             var p = offset+i*nlon+j;
             faces.push(p);
-            faces.push(p+nlon);
             faces.push(p+nlon+1);
+            faces.push(p+nlon);
             
             faces.push(p);
-            faces.push(p+nlon+1);
             faces.push(p+1);
+            faces.push(p+nlon+1);
         }
         var p = offset+i*nlon+nlon-1;
         faces.push(p);
-        faces.push(p+nlon);
         faces.push(p+1);
+        faces.push(p+nlon);
 
         faces.push(p);
-        faces.push(p+1);
         faces.push(p-nlon+1);
+        faces.push(p+1);
     }
     
     // south pole faces
     var offset = 1 + (nlat-1) * nlon;
     for(var j=0; j<nlon-1; j++) {
         faces.push(offset+nlon);
-        faces.push(offset+j+1);
         faces.push(offset+j);
+        faces.push(offset+j+1);
     }
     faces.push(offset+nlon);
-    faces.push(offset);
     faces.push(offset+nlon-1);
+    faces.push(offset);
  
     // Build the edges
     for(var i=0; i<nlon; i++) {
