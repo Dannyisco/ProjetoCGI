@@ -1,7 +1,7 @@
 export {points, faces}
 
 const points = [
-    0,0,0,
+    -3.4101800e-003,1.3031957e-001,2.1754370e-002, // This is never used, added to work with 1-based indices for faces.
     -3.4101800e-003,1.3031957e-001,2.1754370e-002,
     -8.1719160e-002,1.5250145e-001,2.9656090e-002,
     -3.0543480e-002,1.2477885e-001,1.0983400e-003,
