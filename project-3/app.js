@@ -162,6 +162,12 @@ function setup(shaders)
         diffuse = gl.getUniformLocation(program, "uLight.diffuse");
         specular = gl.getUniformLocation(program, "uLight.specular");
 
+        mModelView = gl.getUniformLocation(program, "mModelView");
+        mNormals = gl.getUniformLocation(program, "mModelView"); // model-view transformation for normals
+        mview = gl.getUniformLocation(program, "mView"); // view transformation (for points)
+        mViewNormals = gl.getUniformLocation(program, "mViewNormals"); // view transformation (for vectors)
+        mprojection = gl.getUniformLocation(program, "mProjection"); // projection matrix
+
         pushMatrix()
             multTranslation([0,-2,0])
             objects();
@@ -190,6 +196,12 @@ function setup(shaders)
         gl.uniform3fv(ambient, lightIntensities.ambient);
         gl.uniform3fv(diffuse, lightIntensities.diffuse);
         gl.uniform3fv(specular, lightIntensities.specular);
+
+        gl.uniform3fv(mModelView, modelView());
+        //gl.uniform3fv(mNormals, );
+        gl.uniform3fv(mview, mView);
+        //gl.uniform3fv(mViewNormals, );
+        gl.uniform3fv(mprojection, mProjection);
 
         pushMatrix()
             multTranslation([-2.5, 0, -2.5]);
