@@ -1,5 +1,5 @@
 import { buildProgramFromSources, loadShadersFromURLS, setupWebGL } from "../../libs/utils.js";
-import { ortho, lookAt, flatten, vec3, vec4, mult, rotateX, rotateY, inverse, perspective } from "../../libs/MV.js";
+import { ortho, lookAt, flatten, vec3, vec4, mult, rotateX, rotateY, inverse, transpose, normalMatrix, perspective } from "../../libs/MV.js";
 import {modelView, loadMatrix, multRotationX, multRotationY, multRotationZ, multScale, pushMatrix, popMatrix, multTranslation } from "../../libs/stack.js";
 import { GUI } from '../../libs/dat.gui.module.js'
 
@@ -12,22 +12,20 @@ import * as TORUS from '../../libs/objects/torus.js';
 
 /** @type WebGLRenderingContext */
 let gl;
-let uColor;
 let mode;
 let uKa;
 let uKd;
 let uKs;
 let shininess;
-let ambient;
-let diffuse;
-let specular;
+let uMaterial;
+let nLights = 1;
 
 //GUI
 let cameraObj = {fovy: 45, near: 0.1, far: 30};
 let optionsObj = {backface_culling: true, depth_test: true};
-let materialObj = {Ka: vec3(150), Kd: vec3(150), Ks: vec3(200), intensity: 100};
+let materialObj = {Ka: vec3(150, 150, 150), Kd: vec3(150, 150, 150), Ks: vec3(200, 200, 200), shininess: 100};
 let lightPos = {x: 0, y: 0, z:10, w: 1};
-let lightIntensities = {ambient: vec3(50), diffuse: vec3(60), specular: vec3(200)};
+let lightIntensities = {ambient: vec3(50, 50, 50), diffuse: vec3(60, 60, 60), specular: vec3(200, 200, 200)};
 let lightAxis = {x: 0, y: 0, z:-1};;
 
 const gui = new GUI()
@@ -48,31 +46,27 @@ const material = gui.addFolder('material')
 material.addColor(materialObj, 'Ka', 0, 255)
 material.addColor(materialObj, 'Kd', 0, 255) 
 material.addColor(materialObj, 'Ks', 0, 255)
-material.add(materialObj, 'intensity', 100)
+material.add(materialObj, 'shininess', 100)
 material.open()
 //lights
 const lights = gui.addFolder('lights')
-const light1 = gui.addFolder('light 1')
-const position = gui.addFolder('position')
-const intensities = gui.addFolder('intensities')
-const axis = gui.addFolder('axis')
-lights.addFolder('light1')
+const light1 = lights.addFolder('light 1')
 //pos
-light1.addFolder('position');
-position.add(lightPos, 'x', lightPos.x)
-position.add(lightPos, 'y', lightPos.y)
-position.add(lightPos, 'z', lightPos.z)
-position.add(lightPos, 'w', lightPos.w)
+const position = light1.addFolder('position')
+position.add(lightPos, 'x', -20, 20)
+position.add(lightPos, 'y', -20, 20)
+position.add(lightPos, 'z', -20, 20)
+position.add(lightPos, 'w', 1)
 //intensities
-light1.addFolder('intensities');
-intensities.add(lightIntensities, 'ambient', lightIntensities.ambient)
-intensities.add(lightIntensities, 'diffuse', lightIntensities.diffuse)
-intensities.add(lightIntensities, 'specular', lightIntensities.specular)
+const intensities = light1.addFolder('intensities')
+intensities.addColor(lightIntensities, 'ambient', 0, 255)
+intensities.addColor(lightIntensities, 'diffuse', 0, 255)
+intensities.addColor(lightIntensities, 'specular', 0, 255)
 //axis
-light1.addFolder('axis');
-axis.add(lightAxis, 'x', lightAxis.x)
-axis.add(lightAxis, 'y', lightAxis.y)
-axis.add(lightAxis, 'z', lightAxis.z)
+const axis = light1.addFolder('axis')
+axis.add(lightAxis, 'x', -20, 20)
+axis.add(lightAxis, 'y', -20, 20)
+axis.add(lightAxis, 'z', -20, 20)
 
 function setup(shaders)
 {
@@ -151,22 +145,43 @@ function setup(shaders)
         uploadProjection(mProjection);
         
         loadMatrix(mView);
-        
-        uColor = gl.getUniformLocation(program, "uColor");
 
         uKa = gl.getUniformLocation(program, "uMaterial.Ka");
         uKd = gl.getUniformLocation(program, "uMaterial.Kd");
         uKs = gl.getUniformLocation(program, "uMaterial.Ks");
         shininess = gl.getUniformLocation(program, "uMaterial.shininess");
-        ambient = gl.getUniformLocation(program, "uLight.ambient");
-        diffuse = gl.getUniformLocation(program, "uLight.diffuse");
-        specular = gl.getUniformLocation(program, "uLight.specular");
 
-        mModelView = gl.getUniformLocation(program, "mModelView");
-        mNormals = gl.getUniformLocation(program, "mModelView"); // model-view transformation for normals
-        mview = gl.getUniformLocation(program, "mView"); // view transformation (for points)
-        mViewNormals = gl.getUniformLocation(program, "mViewNormals"); // view transformation (for vectors)
-        mprojection = gl.getUniformLocation(program, "mProjection"); // projection matrix
+        const mModelView = gl.getUniformLocation(program, "mModelView");
+        const mNormals = gl.getUniformLocation(program, "mNormals"); 
+        const mview = gl.getUniformLocation(program, "mView"); 
+        const mViewNormals = gl.getUniformLocation(program, "mViewNormals"); 
+        const mprojection = gl.getUniformLocation(program, "mProjection");
+        
+        const uNLights =  gl.getUniformLocation(program, "uNLights");
+        uMaterial = gl.getUniformLocation(program, "uMaterial");
+
+        let ambient;
+        let diffuse;
+        let specular;
+        let position;
+        
+        gl.uniformMatrix4fv(mModelView,false,  flatten(modelView()));
+        gl.uniformMatrix4fv(mNormals,false,  flatten(normalMatrix(modelView())));
+        gl.uniformMatrix4fv(mview, false, flatten(mView));
+        gl.uniformMatrix4fv(mViewNormals,false, flatten(normalMatrix(mView)));
+        gl.uniformMatrix4fv(mprojection,false, flatten(mProjection));
+        gl.uniform1i(uNLights, nLights);
+
+        for(let i=0; i < nLights; i++) {
+            ambient = gl.getUniformLocation(program, "uLights[" + i + "].ambient");
+            diffuse = gl.getUniformLocation(program, "uLights[" + i + "].diffuse");
+            specular = gl.getUniformLocation(program, "uLights[" + i + "].specular");
+            position = gl.getUniformLocation(program, "uLights[" + i + "].position");
+            gl.uniform3fv(ambient, lightIntensities.ambient); 
+            gl.uniform3fv(diffuse, lightIntensities.diffuse);  
+            gl.uniform3fv(specular, lightIntensities.specular);
+            gl.uniform4fv(position, vec4(lightPos.x, lightPos.y, lightPos.z, lightPos.w));
+        }
 
         pushMatrix()
             multTranslation([0,-2,0])
@@ -187,39 +202,29 @@ function setup(shaders)
     }
 
     function objects() {
-    
-        gl.uniform3fv(uColor, vec3(1.0, 0.0, 1.0));
-        gl.uniform3fv(uKa, materialObj.Ka);
-        gl.uniform3fv(uKd, materialObj.Kd);
-        gl.uniform3fv(uKs, materialObj.Ks);
-        gl.uniform3fv(intensity, materialObj.intensity);
-        gl.uniform3fv(ambient, lightIntensities.ambient);
-        gl.uniform3fv(diffuse, lightIntensities.diffuse);
-        gl.uniform3fv(specular, lightIntensities.specular);
-
-        gl.uniform3fv(mModelView, modelView());
-        //gl.uniform3fv(mNormals, );
-        gl.uniform3fv(mview, mView);
-        //gl.uniform3fv(mViewNormals, );
-        gl.uniform3fv(mprojection, mProjection);
-
+        
+        
         pushMatrix()
             multTranslation([-2.5, 0, -2.5]);
             cube()
         popMatrix();
         
-        gl.uniform3fv(uKd, materialObj.Kd);
+   
         pushMatrix()
             multTranslation([-2.5, 0, 2.5]);
             cylinder()
         popMatrix();
-        
-        gl.uniform3fv(uKs, materialObj.Ks);
+ 
+
         pushMatrix()
             multTranslation([2.5, 0, -2.5]);
             torus()
         popMatrix();
        
+
+        gl.uniform3fv(uKa, materialObj.Ka);
+        gl.uniform3fv(uKd, materialObj.Kd);
+        gl.uniform3fv(uKs, materialObj.Ks);
         gl.uniform1f(shininess, materialObj.shininess);
         pushMatrix()
             multTranslation([2.5, 0, 2.5]);
@@ -255,7 +260,6 @@ function setup(shaders)
     }
 
     function drawPlane() {
-        gl.uniform3fv(uColor, vec3(1.0, 0.0, 0.0));
         pushMatrix()
             multTranslation([0.0, -0.5/2, 0.0]);
             multScale([10, 0.5, 10]);
