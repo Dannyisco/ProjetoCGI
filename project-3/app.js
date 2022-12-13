@@ -1,5 +1,5 @@
 import { buildProgramFromSources, loadShadersFromURLS, setupWebGL } from "../../libs/utils.js";
-import { ortho, lookAt, flatten, vec3, vec4, mult, rotateX, rotateY, inverse, transpose, normalMatrix, perspective } from "../../libs/MV.js";
+import { ortho, lookAt, flatten,vec2, vec3, vec4, mult, rotateX, rotateY, inverse, transpose, normalMatrix, perspective } from "../../libs/MV.js";
 import {modelView, loadMatrix, multRotationX, multRotationY, multRotationZ, multScale, pushMatrix, popMatrix, multTranslation } from "../../libs/stack.js";
 import { GUI } from '../../libs/dat.gui.module.js'
 
@@ -12,6 +12,7 @@ import * as TORUS from '../../libs/objects/torus.js';
 
 /** @type WebGLRenderingContext */
 let gl;
+let canvas = document.getElementById("gl-canvas");;
 let mode;
 let uKa;
 let uKd;
@@ -19,9 +20,11 @@ let uKs;
 let shininess;
 let uMaterial;
 let nLights = 1;
+let dragging = false;
+let cursorPosition = vec2(0.0);
 
 //GUI
-let cameraObj = {fovy: 45, near: 0.1, far: 30};
+let cameraObj = {fovy: 45, near: 0.1, far: 30, Gama : 0, Theta: 0};
 let optionsObj = {backface_culling: true, depth_test: true};
 let materialObj = {Ka: vec3(150, 150, 150), Kd: vec3(150, 150, 150), Ks: vec3(200, 200, 200), shininess: 100};
 let lightPos = {x: 0, y: 0, z:10, w: 1};
@@ -32,14 +35,16 @@ const gui = new GUI()
 
 //options
 const options = gui.addFolder('options')
-options.add(optionsObj, 'backface_culling', true, false)
-options.add(optionsObj, 'depth_test', true, false)
+options.add(optionsObj, 'backface_culling', true, false).name('backface culling')
+options.add(optionsObj, 'depth_test', true, false).name('depth test')
 options.open()
 //camera
 const camera = gui.addFolder('camera')
 camera.add(cameraObj, 'fovy', 0, 180)
 camera.add(cameraObj, 'near', 0, 25) 
 camera.add(cameraObj, 'far', 0, 40)
+camera.add(cameraObj, 'Gama', -180, 180)
+camera.add(cameraObj, 'Theta', -180, 180)
 camera.open()
 //material
 const material = gui.addFolder('material')
@@ -68,9 +73,55 @@ axis.add(lightAxis, 'x', -20, 20)
 axis.add(lightAxis, 'y', -20, 20)
 axis.add(lightAxis, 'z', -20, 20)
 
+function getCursorPosition(canvas, event) {
+    const mx = event.offsetX;
+    const my = event.offsetY;
+
+    cursorPosition[0]=((mx / canvas.width * 2) - 1) * 1.5;;
+    cursorPosition[1]=(((canvas.height - my)/canvas.height * 2) -1)*(1.5 * canvas.height / canvas.width);
+
+    return vec2(cursorPosition[0], cursorPosition[1]);
+}
+
+let initpos = vec2(0,0);
+    canvas.addEventListener("mousedown", function(event) {
+        dragging = true;
+        initpos = getCursorPosition(canvas, event);
+    });
+
+    canvas.addEventListener("mouseup", function(event) {
+        dragging = false;
+    });
+
+    canvas.addEventListener("mousemove", function(event) {
+        const cursorPos = getCursorPosition(canvas, event);
+        if (dragging) {
+            var dy = (cursorPos[1] - initpos[1]) * 45; //???
+            var dx = (cursorPos[0] - initpos[0]) * 45; //???
+        
+
+            if(cameraObj.Theta > 180) cameraObj.Theta = 180
+            else cameraObj.Theta += dy;
+
+            if(cameraObj.Gama > 180) cameraObj.Gama = 180
+            else cameraObj.Gama += dx;
+
+            if(cameraObj.Theta < -180) cameraObj.Theta = -180
+            else cameraObj.Theta += dy;
+
+            if(cameraObj.Gama < -180) cameraObj.Gama = -180
+            else cameraObj.Gama += dx;
+
+            
+        
+        }
+        initpos[0] = cursorPos[0];
+        initpos[1] = cursorPos[1];
+    });
+
 function setup(shaders)
 {
-    let canvas = document.getElementById("gl-canvas");
+    //canvas = document.getElementById("gl-canvas");
     let aspect = canvas.width / canvas.height;
 
     gl = setupWebGL(canvas); 
@@ -135,6 +186,7 @@ function setup(shaders)
 
     function render() {
         mProjection = perspective(cameraObj.fovy, aspect, cameraObj.near, cameraObj.far)
+        mView = mult(lookAt([-15, 5, 0], [0, 0, 0], [0, 1, 0]),mult(rotateX(cameraObj.Theta), rotateY( cameraObj.Gama)));
 
         window.requestAnimationFrame(render);
 
