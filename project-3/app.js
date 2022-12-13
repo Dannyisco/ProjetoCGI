@@ -23,55 +23,135 @@ let nLights = 1;
 let dragging = false;
 let cursorPosition = vec2(0.0);
 
+let optionsObj = {
+    Mode : NaN,
+    DepthTest : true,
+    BackfaceCulling : true
+}
+
+let cameraObj = {
+    Gama : 0,
+    Theta : 0,
+    fovy : 45,
+    near : 0.1,
+    far : 60,
+    eye : [-15, 5, 0],
+    at : [0, 0, 0],
+    up : [0, 1, 0]
+}
+
+let lights = [
+    {
+    ambient : [50,0,0],
+    diffuse : [60,60,60],
+    specular : [200,200,200],
+    position : [20,-5.0,0.0,-1],
+    axis : [0.0,0.0,-1.0],
+    apperture : 10.0,
+    cutoff  : 10
+    },
+    {
+    ambient : [50,0,0],
+    diffuse : [50,0,0],
+    specular : [150,0,0],
+    position : [-20.0,5.0,5.0,0.0],
+    axis : [20.0,-5.0,-5.0],
+    apperture : 180.0,
+    cutoff  : -1
+    },
+    {
+    ambient : [75,75,100],
+    diffuse : [75,75,100],
+    specular : [150,150,175],
+    position : [0,0,10,1],
+    axis : [-5.0,-5.0,-2.0],
+    apperture : 180.0,
+    cutoff  : -1
+    }
+];
+
+
+let materialObj = {
+    Ka : [0,0,0],
+    Kd : [0,0,0],
+    Ks : [0,0,0],
+    shininess : 0
+}
+
+let grayMaterial = {
+    Ka: [150,150,150],
+    kd: [150,150,150],
+    Ks: [200,200,200],
+    shininess : 100.0
+}
+
+let redMaterial = {
+    Ka: [150,150,150],
+    kd: [150,150,150],
+    Ks: [200,200,200],
+    shininess : 10.0
+};
+
+let greenMaterial = {
+    Ka: [50,150,50],
+    kd: [50,150,50],
+    Ks: [200,200,200],
+    shininess : 100.0
+}
+
 //GUI
-let cameraObj = {fovy: 45, near: 0.1, far: 30, Gama : 0, Theta: 0};
-let optionsObj = {backface_culling: true, depth_test: true};
-let materialObj = {Ka: vec3(150, 150, 150), Kd: vec3(150, 150, 150), Ks: vec3(200, 200, 200), shininess: 100};
-let lightPos = {x: 0, y: 0, z:10, w: 1};
-let lightIntensities = {ambient: vec3(50, 50, 50), diffuse: vec3(60, 60, 60), specular: vec3(200, 200, 200)};
-let lightAxis = {x: 0, y: 0, z:-1};;
+
 
 const gui = new GUI()
 
 //options
-const options = gui.addFolder('options')
+const options = gui.addFolder('Options')
 options.add(optionsObj, 'backface_culling', true, false).name('backface culling')
 options.add(optionsObj, 'depth_test', true, false).name('depth test')
 options.open()
 //camera
-const camera = gui.addFolder('camera')
+const camera = gui.addFolder('Camera')
 camera.add(cameraObj, 'fovy', 0, 180)
 camera.add(cameraObj, 'near', 0, 25) 
 camera.add(cameraObj, 'far', 0, 40)
-camera.add(cameraObj, 'Gama', -180, 180)
-camera.add(cameraObj, 'Theta', -180, 180)
+camera.add(cameraObj, 'Gama', -180, 180).listen();
+camera.add(cameraObj, 'Theta', -180, 180).listen();
 camera.open()
 //material
-const material = gui.addFolder('material')
+const material = gui.addFolder('Material')
 material.addColor(materialObj, 'Ka', 0, 255)
 material.addColor(materialObj, 'Kd', 0, 255) 
 material.addColor(materialObj, 'Ks', 0, 255)
 material.add(materialObj, 'shininess', 100)
 material.open()
 //lights
-const lights = gui.addFolder('lights')
-const light1 = lights.addFolder('light 1')
-//pos
-const position = light1.addFolder('position')
-position.add(lightPos, 'x', -20, 20)
-position.add(lightPos, 'y', -20, 20)
-position.add(lightPos, 'z', -20, 20)
-position.add(lightPos, 'w', 1)
-//intensities
-const intensities = light1.addFolder('intensities')
-intensities.addColor(lightIntensities, 'ambient', 0, 255)
-intensities.addColor(lightIntensities, 'diffuse', 0, 255)
-intensities.addColor(lightIntensities, 'specular', 0, 255)
-//axis
-const axis = light1.addFolder('axis')
-axis.add(lightAxis, 'x', -20, 20)
-axis.add(lightAxis, 'y', -20, 20)
-axis.add(lightAxis, 'z', -20, 20)
+
+const lightsFolder= gui.addFolder('Lights')
+for(let i=0; i < nLights; i++) {
+    lightsFolder.addFolder('Light' + (i+1));
+    lightsFolder.add('apperture');
+    lightsFolder.add('cut off');
+
+    const intensities = lightsFolder.addFolder('Intensities')
+    intensities.addColor(lights[i], 'ambient').listen();
+    intensities.addColor(lights[i], 'diffuse').listen();
+    intensities.addColor(lights[i], 'specular').listen();
+
+    const position = lightsFolder.addFolder('Position')
+    position.add(lights[i].position,0).step(0.1).name('x').listen();
+    position.add(lights[i].position,1).step(0.1).name('y').listen();
+    position.add(lights[i].position,2).step(0.1).name('z').listen();
+    position.add(lights[i].position,3).step(0.1).name('w').listen();
+
+    const axis = lightsFolder.addFolder('Axis')
+    axis.add(lights[i].axis,0).step(0.1).name('x').listen();
+    axis.add(lights[i].axis,1).step(0.1).name('y').listen();
+    axis.add(lights[i].axis,2).step(0.1).name('z').listen();
+
+    lightsFolder.add(lights[i], 'apperture', 0, 180, 0.1).listen();
+    lightsFolder.add(lights[i], 'cutoff', -1, 200, 1).listen();
+
+}
 
 function getCursorPosition(canvas, event) {
     const mx = event.offsetX;
