@@ -1,5 +1,4 @@
 precision highp float;
-const int MAX_LIGHTS = 3;
 
 attribute vec4 vNormal;
 attribute vec4 vPosition;

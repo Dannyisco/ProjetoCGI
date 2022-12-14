@@ -7,12 +7,10 @@ struct LightInfo {
     vec3 diffuse;
     vec3 specular;
     vec3 axis;
-
     float aperture;
     float cutoff;
-
     vec4 position;
-    
+    int on;
 };
 
 struct MaterialInfo {
@@ -37,7 +35,7 @@ uniform mat4 mViewNormals; // view transf. for vectors
 void main() {
     for(int i=0; i<MAX_LIGHTS; i++) {
         if(i == uNLights) break;
-
+    if(uLights[i].on == 1){
         vec3 L;
         vec3 V = normalize(fViewer);
         vec3 N = normalize(fNormal);
@@ -64,6 +62,8 @@ void main() {
             specular = vec3(0.0, 0.0, 0.0);
         }
 
-        gl_FragColor += vec4(ambientColor + diffuse + specular, x);
+        gl_FragColor += vec4(ambientColor + diffuse + specular, 1);
+    }else
+        gl_FragColor += vec4(0,0,0,1);
     }
 }

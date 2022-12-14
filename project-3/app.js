@@ -18,7 +18,6 @@ let uKa;
 let uKd;
 let uKs;
 let shininess;
-let uMaterial;
 let nLights = 3;
 let dragging = false;
 let cursorPosition = vec2(0.0);
@@ -48,7 +47,9 @@ let lights = [
     position : [20,-5.0,0.0,0.0],
     axis : [0.0,0.0,-1.0],
     aperture : 10.0,
-    cutoff  : 10
+    cutoff  : 10,
+    on : true,
+    typeof : 'Pontual'
     },
     {
     ambient : [50,0,0],
@@ -57,7 +58,9 @@ let lights = [
     position : [-20.0,5.0,5.0,0.0],
     axis : [20.0,-5.0,-5.0],
     aperture : 180.0,
-    cutoff  : -1
+    cutoff  : -1,
+    on : true,
+    typeof : 'Pontual'
     },
     {
     ambient : [75,75,100],
@@ -66,15 +69,17 @@ let lights = [
     position : [0,0,10,0.0],
     axis : [-5.0,-5.0,-2.0],
     aperture : 180.0,
-    cutoff  : -1
+    cutoff  : -1,
+    on : true,
+    typeof : 'Pontual'
     }
 ];
 
 
 let materialObj = {
-    Ka : [255,255,255],
-    Kd : [0,0,0],
-    Ks : [0,0,0],
+    Ka : [132,85,200],
+    Kd : [238,185,185],
+    Ks : [255,210,0],
     shininess : 100.0
 }
 
@@ -86,24 +91,24 @@ let groundMaterial = {
 }
 
 let grayMaterial = {
-    Ka: [60,70,150],
-    Kd: [150,150,150],
+    Ka: [30,10,10],
+    Kd: [10,10,10],
     Ks: [200,70,200],
-    shininess : 10.0
+    shininess : 100.0
 }
 
 let redMaterial = {
-    Ka: [150,150,150],
-    Kd: [150,150,150],
+    Ka: [255,10,10],
+    Kd: [255,10,10],
     Ks: [200,200,200],
-    shininess : 10.0
+    shininess : 100.0
 };
 
 let greenMaterial = {
     Ka: [50,150,50],
     Kd: [50,150,50],
     Ks: [200,200,200],
-    shininess : 10.0
+    shininess : 100.0
 }
 
 //GUI
@@ -113,7 +118,7 @@ const gui = new GUI()
 const options = gui.addFolder('Options')
 options.add(optionsObj, 'BackfaceCulling', true, false).name('backface culling')
 options.add(optionsObj, 'DepthTest', true, false).name('depth test')
-options.open()
+
 
 //camera
 const camera = gui.addFolder('Camera')
@@ -138,42 +143,64 @@ at.add(cameraObj.at, 2, -50, 50).step(0.1).name('z').listen();
 
 //up
 const up = camera.addFolder('Up')
-up.add(cameraObj.up, 0).step(0.1).name('x').listen();
-up.add(cameraObj.up, 1).step(0.1).name('y').listen();
-up.add(cameraObj.up, 2).step(0.1).name('z').listen();
-
-//material
-const material = gui.addFolder('Material')
-material.addColor(materialObj, 'Ka', 0, 255).listen();
-material.addColor(materialObj, 'Kd', 0, 255).listen();
-material.addColor(materialObj, 'Ks', 0, 255).listen();
-material.add(materialObj, 'shininess',0, 100).listen();
-material.open()
+up.add(cameraObj.up, 0, -1, 1, 0.01).step(0.1).name('x').listen();
+up.add(cameraObj.up, 1, -1, 1, 0.01).step(0.1).name('y').listen();
+up.add(cameraObj.up, 2, -1, 1, 0.01).step(0.1).name('z').listen();
 
 //lights
 const lightsFolder= gui.addFolder('Lights')
-for(let i=0; i < nLights; i++) {
-    let light = lightsFolder.addFolder('Light' + (i+1));
-    light.add(lights[i], 'aperture').step(0.1).listen();
-    light.add(lights[i], 'cutoff').step(0.1).name('cut off').listen();
 
+for(let i=0; i < nLights; i++) {
+
+    addLightFolder(i);
+}
+
+function addLightFolder(i) {
+        const light = lightsFolder.addFolder('Light' + (i+1));
+
+    light.add(lights[i],'on', true, false).name('On');
+
+    const menu = light.add(lights[i], 'typeof', {pontual: "Pontual", directional: "Directional", spotlight: "Spotlight"},
+).listen();
+
+menu.onChange(value => { 
+    console.log('Selected value: ${value}');
+    //if(lights[i].typeof== 'Directional') lights[i].position[3]=1.0; VER duvida
+});
+    
+    
     const intensities = light.addFolder('Intensities')
     intensities.addColor(lights[i], 'ambient').listen();
     intensities.addColor(lights[i], 'diffuse').listen();
     intensities.addColor(lights[i], 'specular').listen();
 
     const position = light.addFolder('Position')
-    position.add(lights[i].position,0).step(0.1).name('x').listen();
-    position.add(lights[i].position,1).step(0.1).name('y').listen();
+    position.add(lights[i].position,0, -10, 50).step(0.1).name('x').listen();
+    position.add(lights[i].position,1, 0, 90).step(0.1).name('y').listen();
     position.add(lights[i].position,2).step(0.1).name('z').listen();
     position.add(lights[i].position,3, 0, 1).step(0.1).name('w').listen();
 
     const axis = light.addFolder('Axis')
-    axis.add(lights[i].axis,0).step(0.1).name('x').listen();
+
+   /* var x = axis.add(lights[i].axis,0).step(0.1).name('x').listen();
+    x.domElement.style.pointerEvents = "none";
+    x.domElement.style.opacity = .5;*/
+
+    //duvidaaa
+
     axis.add(lights[i].axis,1).step(0.1).name('y').listen();
     axis.add(lights[i].axis,2).step(0.1).name('z').listen();
 
+    light.add(lights[i], 'aperture', 0, 180).step(0.1).listen();
+    light.add(lights[i], 'cutoff', ).step(0.1).name('cut off').listen();
 }
+
+    //material
+    const material = gui.addFolder('Material')
+    material.addColor(materialObj, 'Ka', 0, 255).listen();
+    material.addColor(materialObj, 'Kd', 0, 255).listen();
+    material.addColor(materialObj, 'Ks', 0, 255).listen();
+    material.add(materialObj, 'shininess',0, 100).listen();
 
 function getCursorPosition(canvas, event) {
     const mx = event.offsetX;
@@ -184,6 +211,8 @@ function getCursorPosition(canvas, event) {
 
     return vec2(cursorPosition[0], cursorPosition[1]);
 }
+
+
 
 let initpos = vec2(0,0);
     canvas.addEventListener("mousedown", function(event) {
@@ -198,9 +227,10 @@ let initpos = vec2(0,0);
     canvas.addEventListener("mousemove", function(event) {
         const cursorPos = getCursorPosition(canvas, event);
         if (dragging) {
-            var dy = (cursorPos[1] - initpos[1]) * 180; //???
-            var dx = (cursorPos[0] - initpos[0]) * 45; //???
-
+            var dy = (cursorPos[1] - initpos[1]) * 45; //???
+            var dx = (cursorPos[0] - initpos[0]) * 90; //???
+        
+            
             if(cameraObj.Theta > 180) cameraObj.Theta = 180
             else cameraObj.Theta += dy;
 
@@ -212,6 +242,12 @@ let initpos = vec2(0,0);
 
             if(cameraObj.Gama < -180) cameraObj.Gama = -180
             else cameraObj.Gama += dx;
+            
+
+            /*cameraObj.Theta > 180 ? cameraObj.Theta = 180 : cameraObj.Theta += dx;
+            cameraObj.Gama > 180 ? cameraObj.Gama = 180 : cameraObj.Gama += dy;
+            cameraObj.Theta < -180 ? cameraObj.Theta = -180 : cameraObj.Theta += dx;
+            cameraObj.Gama < -180 ? cameraObj.Gama = -180 : cameraObj.Gama += dy;*/
 
         }
         initpos[0] = cursorPos[0];
@@ -285,8 +321,11 @@ function setup(shaders)
 
     function render() {
         mProjection = perspective(cameraObj.fovy, aspect, cameraObj.near, cameraObj.far)
-       // mView = mult(lookAt([-15, 5, 0], [0, 0, 0], [0, 1, 0]),mult(rotateX(cameraObj.Theta), rotateY( cameraObj.Gama)));
-        mView = mult(lookAt([cameraObj.eye[0], cameraObj.eye[1], cameraObj.eye[2]], [cameraObj.at[0], cameraObj.at[1], cameraObj.at[2]], [cameraObj.up[0], cameraObj.up[1], cameraObj.at[2]]),mult(rotateX(cameraObj.Theta), rotateY( cameraObj.Gama)));
+
+        mView = mult(lookAt([cameraObj.eye[0], cameraObj.eye[1], cameraObj.eye[2]], 
+            [cameraObj.at[0], cameraObj.at[1], cameraObj.at[2]],
+            [cameraObj.up[0], cameraObj.up[1], cameraObj.at[2]]),
+            mult(rotateX(cameraObj.Theta), rotateY( cameraObj.Gama)));
 
         window.requestAnimationFrame(render);
 
@@ -308,9 +347,7 @@ function setup(shaders)
         const mview = gl.getUniformLocation(program, "mView"); 
         const mViewNormals = gl.getUniformLocation(program, "mViewNormals"); 
         const mprojection = gl.getUniformLocation(program, "mProjection");
-        
         const uNLights =  gl.getUniformLocation(program, "uNLights");
-        uMaterial = gl.getUniformLocation(program, "uMaterial");
         
         gl.uniformMatrix4fv(mModelView,false,  flatten(modelView()));
         gl.uniformMatrix4fv(mNormals,false,  flatten(normalMatrix(modelView())));
@@ -319,30 +356,27 @@ function setup(shaders)
         gl.uniformMatrix4fv(mprojection,false, flatten(mProjection));
         gl.uniform1i(uNLights, nLights);
 
-        let ambient;
-        let diffuse;
-        let specular;
-        let position;
-        let axis;
-        let cutoff;
-        let aperture;
-
-
         for(let i=0; i < nLights; i++) {
-            ambient = gl.getUniformLocation(program, "uLights[" + i + "].ambient");
-            diffuse = gl.getUniformLocation(program, "uLights[" + i + "].diffuse");
-            specular = gl.getUniformLocation(program, "uLights[" + i + "].specular");
-            position = gl.getUniformLocation(program, "uLights[" + i + "].position");
-            axis = gl.getUniformLocation(program, "uLights[" + i + "].axis");
-            cutoff = gl.getUniformLocation(program, "uLights[" + i + "].cutoff");
-            aperture = gl.getUniformLocation(program, "uLights[" + i + "].aperture");
+            const ambient = gl.getUniformLocation(program, "uLights[" + i + "].ambient");
+            const diffuse = gl.getUniformLocation(program, "uLights[" + i + "].diffuse");
+            const specular = gl.getUniformLocation(program, "uLights[" + i + "].specular");
+            const position = gl.getUniformLocation(program, "uLights[" + i + "].position");
+            const axis = gl.getUniformLocation(program, "uLights[" + i + "].axis");
+            const cutoff = gl.getUniformLocation(program, "uLights[" + i + "].cutoff");
+            const aperture = gl.getUniformLocation(program, "uLights[" + i + "].aperture");
+            const on = gl.getUniformLocation(program, "uLights[" + i + "].on");
             gl.uniform3fv(ambient, lights[i].ambient); 
             gl.uniform3fv(diffuse, lights[i].diffuse);  
             gl.uniform3fv(specular, lights[i].specular);
             gl.uniform4fv(position, vec4(lights[i].position[0], lights[i].position[1], lights[i].position[2], lights[i].position[3]));
-            gl.uniform3fv(position, vec3(lights[i].axis[0], lights[i].axis[1], lights[i].axis[2]));
-            gl.uniform1f(position, vec3(lights[i].cutoff));
-            gl.uniform1f(position, vec3(lights[i].aperture));
+            gl.uniform3fv(axis, vec3(lights[i].axis[0], lights[i].axis[1], lights[i].axis[2]));
+            gl.uniform1f(cutoff , lights[i].cutoff);
+            gl.uniform1f(aperture, lights[i].aperture);
+            if(lights[i].on == true){
+            gl.uniform1i(on, 1);
+            }else{
+            gl.uniform1i(on, 0);
+            }
         }
 
         pushMatrix()
