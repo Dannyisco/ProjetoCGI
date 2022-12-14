@@ -2,17 +2,17 @@ precision highp float;
 const int MAX_LIGHTS = 3;
 
 struct LightInfo {
-    // Light colour intensities
+ 
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
     vec3 axis;
 
-    // Light geometry
-    vec4 position;  // Position/direction of light (in camera coordinates)
-    // ...
-    //   additional fields
-    // ...
+    float aperture;
+    float cutoff;
+
+    vec4 position;
+    
 };
 
 struct MaterialInfo {
@@ -49,6 +49,7 @@ void main() {
             L = normalize((mView*uLights[i].position).xyz - fPosition);
 
         float angle = acos(dot(L, -uLights[i].axis)/length(L) * length(-uLights[i].axis));
+        float x = pow(cos(angle), uLights[i].cutoff);
         
         vec3 ambientColor = uLights[i].ambient/255.0 * uMaterial.Ka /255.0;
         vec3 diffuseColor = uLights[i].diffuse/255.0 * uMaterial.Kd /255.0;
@@ -63,6 +64,6 @@ void main() {
             specular = vec3(0.0, 0.0, 0.0);
         }
 
-        gl_FragColor += vec4(ambientColor + diffuse + specular, 1.0);
+        gl_FragColor += vec4(ambientColor + diffuse + specular, x);
     }
 }
