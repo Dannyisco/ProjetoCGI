@@ -36,7 +36,7 @@ let cameraObj = {
     fovy : 45,
     near : 0.1,
     far : 60,
-    eye : vec3(-15, 29.1, 0),
+    eye : vec3(0, 5, 10),
     at : vec3(0, 0, 0),
     up : vec3(0, 1, 0)
 }
@@ -46,9 +46,9 @@ let lights = [
     ambient : [50,0,0],
     diffuse : [60,60,60],
     specular : [200,200,200],
-    position : [-2.6,2.7,0.0,1.0],
+    position : [0.8,20.0,0.0,1.0],
     axis : [0.0,0.0,-1.0],
-    aperture : 11.8,
+    aperture : 0,
     cutoff  : 8.1,
     on : true,
     typeof : POSITIONAL
@@ -57,23 +57,23 @@ let lights = [
     ambient : [50,0,0],
     diffuse : [50,0,0],
     specular : [150,0,0],
-    position : [-2.6,2.7,0.0,1.0],
+    position : [0.8,20.0,0.0,0.0],
     axis : [0.0,0.0,-1.0],
     aperture : 11.8,
     cutoff  : 8.1,
     on : false,
-    typeof : POSITIONAL
+    typeof : DIRECTIONAL
     },
     {
     ambient : [75,75,100],
     diffuse : [75,75,100],
     specular : [150,150,175],
-    position : [-2.6,2.7,0.0,1.0],
+    position : [0.2,1.6,7.2,1.0],
     axis : [0.0,0.0,-1.0],
-    aperture : 11.8,
-    cutoff  : 8.1,
-    on : false,
-    typeof : POSITIONAL
+    aperture : 9.5,
+    cutoff  : 21,
+    on : true,
+    typeof : SPOTLIGHT
     }
 ];
 
@@ -149,6 +149,7 @@ up.add(cameraObj.up, 0, -1, 1, 0.01).step(0.1).name('x').listen();
 up.add(cameraObj.up, 1, -1, 1, 0.01).step(0.1).name('y').listen();
 up.add(cameraObj.up, 2, -1, 1, 0.01).step(0.1).name('z').listen();
 
+
 //lights
 const lightsFolder= gui.addFolder('Lights')
 
@@ -178,8 +179,8 @@ function addLightFolder(i) {
 
     const position = light.addFolder('Position')
     position.add(lights[i].position,0, -10, 50).step(0.1).name('x').listen();
-    position.add(lights[i].position,1, 0, 90).step(0.1).name('y').listen();
-    position.add(lights[i].position,2).step(0.1).name('z').listen();
+    position.add(lights[i].position,1, -10, 50).step(0.1).name('y').listen();
+    position.add(lights[i].position,2, -50, 50).step(0.1).name('z').listen();
     var x = position.add(lights[i].position,3).name('w').listen();
     x.domElement.style.pointerEvents = "none";
     x.domElement.style.opacity = .5;
@@ -191,33 +192,54 @@ function addLightFolder(i) {
     axis.add(lights[i].axis,1).step(0.1).name('y').listen();
     axis.add(lights[i].axis,2).step(0.1).name('z').listen();
 
-    spotlightSett.add(lights[i], 'aperture', 0, 180).step(0.1).listen();
-    spotlightSett.add(lights[i], 'cutoff', 0).step(0.1).name('cut off').listen();
+    spotlightSett.add(lights[i], 'aperture', 0, 90).step(0.1).listen();
+    spotlightSett.add(lights[i], 'cutoff', 0, 200).step(0.1).name('cut off').listen();
 
     if(lights[i].typeof != SPOTLIGHT)
     spotlightSett.hide();
 }
 
-    //material
-    const material = gui.addFolder('Material')
-    material.addColor(materialObj, 'Ka', 0, 255).listen();
-    material.addColor(materialObj, 'Kd', 0, 255).listen();
-    material.addColor(materialObj, 'Ks', 0, 255).listen();
-    material.add(materialObj, 'shininess',0, 100).listen();
-
-function getCursorPosition(canvas, event) {
-    const mx = event.offsetX;
-    const my = event.offsetY;
-
-    cursorPosition[0]=((mx / canvas.width * 2) - 1) * 1.5;
-    cursorPosition[1]=(((canvas.height - my)/canvas.height * 2) -1)*(1.5 * canvas.height / canvas.width);
-
-    return vec2(cursorPosition[0], cursorPosition[1]);
-}
+//material
+const material = gui.addFolder('Material')
+material.addColor(materialObj, 'Ka', 0, 255).listen();
+material.addColor(materialObj, 'Kd', 0, 255).listen();
+material.addColor(materialObj, 'Ks', 0, 255).listen();
+material.add(materialObj, 'shininess',0, 100).listen();
 
 
+function setup(shaders)
+{
+    //canvas = document.getElementById("gl-canvas");
+    let aspect = canvas.width / canvas.height;
 
-let initpos = vec2(0,0);
+    gl = setupWebGL(canvas); 
+    mode = gl.TRIANGLES; 
+
+    let program = buildProgramFromSources(gl, shaders["phong.vert"], shaders["phong.frag"]);
+
+    let mProjection = perspective(cameraObj.fovy, aspect, cameraObj.near, cameraObj.far)
+    let mView = lookAt([-15, 5, 0], [0, 0, 0], [0, 1, 0]);
+
+    let initpos = vec2(0,0);
+    
+
+    resize_canvas();
+    window.addEventListener("resize", resize_canvas);
+
+    document.onkeydown = function(event) {
+    
+        switch(event.key) { 
+            case 'w':
+                mode = gl.LINES; 
+                break;
+            case 's':
+                mode = gl.TRIANGLES;
+                break;
+         }
+    }
+
+
+
     canvas.addEventListener("mousedown", function(event) {
         dragging = true;
         initpos = getCursorPosition(canvas, event);
@@ -252,33 +274,14 @@ let initpos = vec2(0,0);
         initpos[1] = cursorPos[1];
     });
 
-function setup(shaders)
-{
-    //canvas = document.getElementById("gl-canvas");
-    let aspect = canvas.width / canvas.height;
-
-    gl = setupWebGL(canvas); 
-    mode = gl.TRIANGLES; 
-
-    let program = buildProgramFromSources(gl, shaders["phong.vert"], shaders["phong.frag"]);
-
-    let mProjection = perspective(cameraObj.fovy, aspect, cameraObj.near, cameraObj.far)
-    let mView = lookAt([-15, 5, 0], [0, 0, 0], [0, 1, 0]);
-
-    resize_canvas();
-    window.addEventListener("resize", resize_canvas);
-
-
-    document.onkeydown = function(event) {
+    function getCursorPosition(canvas, event) {
+        const mx = event.offsetX;
+        const my = event.offsetY;
     
-        switch(event.key) { 
-            case 'w':
-                mode = gl.LINES; 
-                break;
-            case 's':
-                mode = gl.TRIANGLES;
-                break;
-         }
+        cursorPosition[0]=((mx / canvas.width * 2) - 1) * 1.5;
+        cursorPosition[1]=(((canvas.height - my)/canvas.height * 2) -1)*(1.5 * canvas.height / canvas.width);
+    
+        return vec2(cursorPosition[0], cursorPosition[1]);
     }
 
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
