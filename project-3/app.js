@@ -47,7 +47,7 @@ let lights = [
     specular : [200,200,200],
     position : [20,-5.0,0.0,0.0],
     axis : [0.0,0.0,-1.0],
-    apperture : 10.0,
+    aperture : 10.0,
     cutoff  : 10
     },
     {
@@ -56,7 +56,7 @@ let lights = [
     specular : [150,0,0],
     position : [-20.0,5.0,5.0,0.0],
     axis : [20.0,-5.0,-5.0],
-    apperture : 180.0,
+    aperture : 180.0,
     cutoff  : -1
     },
     {
@@ -65,7 +65,7 @@ let lights = [
     specular : [150,150,175],
     position : [0,0,10,0.0],
     axis : [-5.0,-5.0,-2.0],
-    apperture : 180.0,
+    aperture : 180.0,
     cutoff  : -1
     }
 ];
@@ -154,7 +154,7 @@ material.open()
 const lightsFolder= gui.addFolder('Lights')
 for(let i=0; i < nLights; i++) {
     let light = lightsFolder.addFolder('Light' + (i+1));
-    light.add(lights[i], 'apperture').step(0.1).listen();
+    light.add(lights[i], 'aperture').step(0.1).listen();
     light.add(lights[i], 'cutoff').step(0.1).name('cut off').listen();
 
     const intensities = light.addFolder('Intensities')
@@ -324,6 +324,9 @@ function setup(shaders)
         let specular;
         let position;
         let axis;
+        let cutoff;
+        let aperture;
+
 
         for(let i=0; i < nLights; i++) {
             ambient = gl.getUniformLocation(program, "uLights[" + i + "].ambient");
@@ -331,11 +334,15 @@ function setup(shaders)
             specular = gl.getUniformLocation(program, "uLights[" + i + "].specular");
             position = gl.getUniformLocation(program, "uLights[" + i + "].position");
             axis = gl.getUniformLocation(program, "uLights[" + i + "].axis");
+            cutoff = gl.getUniformLocation(program, "uLights[" + i + "].cutoff");
+            aperture = gl.getUniformLocation(program, "uLights[" + i + "].aperture");
             gl.uniform3fv(ambient, lights[i].ambient); 
             gl.uniform3fv(diffuse, lights[i].diffuse);  
             gl.uniform3fv(specular, lights[i].specular);
             gl.uniform4fv(position, vec4(lights[i].position[0], lights[i].position[1], lights[i].position[2], lights[i].position[3]));
             gl.uniform3fv(position, vec3(lights[i].axis[0], lights[i].axis[1], lights[i].axis[2]));
+            gl.uniform1f(position, vec3(lights[i].cutoff));
+            gl.uniform1f(position, vec3(lights[i].aperture));
         }
 
         pushMatrix()
