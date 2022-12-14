@@ -33,20 +33,20 @@ let optionsObj = {
 let cameraObj = {
     Gama : 0,
     Theta : 0,
-    fovy : 45,
+    fovy : 52,
     near : 0.1,
     far : 60,
-    eye : vec3(0, 5, 10),
+    eye : vec3(0, 6, 10),
     at : vec3(0, 0, 0),
     up : vec3(0, 1, 0)
 }
 
 let lights = [
     {
-    ambient : [50,0,0],
-    diffuse : [60,60,60],
-    specular : [200,200,200],
-    position : [0.8,20.0,0.0,1.0],
+    ambient : [41,19,73],
+    diffuse : [87,78,115],
+    specular : [106,34,223],
+    position : [2,14,12,1.0],
     axis : [0.0,0.0,-1.0],
     aperture : 0,
     cutoff  : 8.1,
@@ -54,9 +54,9 @@ let lights = [
     typeof : POSITIONAL
     },
     {
-    ambient : [50,0,0],
-    diffuse : [50,0,0],
-    specular : [150,0,0],
+    ambient : [145,26,98],
+    diffuse : [125,69,108],
+    specular : [126,74,155],
     position : [0.8,20.0,0.0,0.0],
     axis : [0.0,0.0,-1.0],
     aperture : 11.8,
@@ -65,53 +65,54 @@ let lights = [
     typeof : DIRECTIONAL
     },
     {
-    ambient : [75,75,100],
-    diffuse : [75,75,100],
-    specular : [150,150,175],
-    position : [0.2,1.6,7.2,1.0],
+    ambient : [122,46,93],
+    diffuse : [215,56,186],
+    specular : [168,73,112],
+    position : [0.2,1.6,5.7,1.0],
     axis : [0.0,0.0,-1.0],
-    aperture : 9.5,
-    cutoff  : 21,
+    aperture : 20,
+    cutoff  : 10.5,
     on : true,
     typeof : SPOTLIGHT
     }
 ];
 
-
-let materialObj = {
-    Ka : [132,85,200],
-    Kd : [238,185,185],
-    Ks : [255,210,0],
+let bunnyMaterial = {
+    Ka: [232,110,167],
+    Kd: [243,173,189],
+    Ks: [225,32,131],
     shininess : 100.0
 }
+
 
 let groundMaterial = {
-    Ka: [150,150,75],
+    Ka: [131,165,225],
     Kd: [125,125,125],
     Ks: [0,0,0],
+    shininess : 50.0
+}
+
+let torusMaterial = {
+    Ka: [57,12,37],
+    Kd: [75,22,36],
+    Ks: [106,25,177],
     shininess : 100.0
 }
 
-let grayMaterial = {
-    Ka: [30,10,10],
-    Kd: [10,10,10],
-    Ks: [200,70,200],
-    shininess : 100.0
-}
-
-let redMaterial = {
-    Ka: [255,10,10],
-    Kd: [255,10,10],
-    Ks: [200,200,200],
-    shininess : 100.0
+let cubeMaterial = {
+    Ka: [45,164,247],
+    Kd: [255,255,255],
+    Ks: [135,211,235],
+    shininess : 50.0
 };
 
-let greenMaterial = {
-    Ka: [50,150,50],
-    Kd: [50,150,50],
-    Ks: [200,200,200],
+let cylinderMaterial = {
+    Ka : [87,40,135],
+    Kd : [73,99,185],
+    Ks : [188,43,137],
     shininess : 100.0
 }
+
 
 //GUI
 const gui = new GUI()
@@ -201,10 +202,10 @@ function addLightFolder(i) {
 
 //material
 const material = gui.addFolder('Material')
-material.addColor(materialObj, 'Ka', 0, 255).listen();
-material.addColor(materialObj, 'Kd', 0, 255).listen();
-material.addColor(materialObj, 'Ks', 0, 255).listen();
-material.add(materialObj, 'shininess',0, 100).listen();
+material.addColor(bunnyMaterial, 'Ka', 0, 255).listen();
+material.addColor(bunnyMaterial, 'Kd', 0, 255).listen();
+material.addColor(bunnyMaterial, 'Ks', 0, 255).listen();
+material.add(bunnyMaterial, 'shininess',0, 100).listen();
 
 
 function setup(shaders)
@@ -252,18 +253,18 @@ function setup(shaders)
     canvas.addEventListener("mousemove", function(event) {
         const cursorPos = getCursorPosition(canvas, event);
         if (dragging) {
-            var dy = (cursorPos[1] - initpos[1]) * 45; //???
-            var dx = (cursorPos[0] - initpos[0]) * 90; //???
+            var dy = (cursorPos[1] - initpos[1]) * 50; 
+            var dx = (cursorPos[0] - initpos[0]) * 100;
         
             
             if(cameraObj.Theta > 180) cameraObj.Theta = 180
-            else cameraObj.Theta += dy;
+            else cameraObj.Theta -= dy;
 
             if(cameraObj.Gama > 180) cameraObj.Gama = 180
             else cameraObj.Gama += dx;
 
             if(cameraObj.Theta < -180) cameraObj.Theta = -180
-            else cameraObj.Theta += dy;
+            else cameraObj.Theta -= dy;
 
             if(cameraObj.Gama < -180) cameraObj.Gama = -180
             else cameraObj.Gama += dx;
@@ -385,7 +386,6 @@ function setup(shaders)
         }
 
         pushMatrix()
-            multTranslation([0,-2,0])
             objects();
             drawPlane();
         popMatrix()
@@ -404,38 +404,38 @@ function setup(shaders)
 
     function objects() {
         
-        gl.uniform3fv(uKa, redMaterial.Ka);
-        gl.uniform3fv(uKd, redMaterial.Kd);
-        gl.uniform3fv(uKs, redMaterial.Ks);
-        gl.uniform1f(shininess, redMaterial.shininess);
+        gl.uniform3fv(uKa, cubeMaterial.Ka);
+        gl.uniform3fv(uKd, cubeMaterial.Kd);
+        gl.uniform3fv(uKs, cubeMaterial.Ks);
+        gl.uniform1f(shininess, cubeMaterial.shininess);
         pushMatrix()
             multTranslation([-2.5, 0, -2.5]);
             cube()
         popMatrix();
         
-        gl.uniform3fv(uKa, greenMaterial.Ka);
-        gl.uniform3fv(uKd, greenMaterial.Kd);
-        gl.uniform3fv(uKs, greenMaterial.Ks);
-        gl.uniform1f(shininess, greenMaterial.shininess);
+        gl.uniform3fv(uKa, cylinderMaterial.Ka);
+        gl.uniform3fv(uKd, cylinderMaterial.Kd);
+        gl.uniform3fv(uKs, cylinderMaterial.Ks);
+        gl.uniform1f(shininess, cylinderMaterial.shininess);
         pushMatrix()
             multTranslation([-2.5, 0, 2.5]);
             cylinder()
         popMatrix();
  
-        gl.uniform3fv(uKa, grayMaterial.Ka);
-        gl.uniform3fv(uKd, grayMaterial.Kd);
-        gl.uniform3fv(uKs, grayMaterial.Ks);
-        gl.uniform1f(shininess, grayMaterial.shininess);
+        gl.uniform3fv(uKa, torusMaterial.Ka);
+        gl.uniform3fv(uKd, torusMaterial.Kd);
+        gl.uniform3fv(uKs, torusMaterial.Ks);
+        gl.uniform1f(shininess, torusMaterial.shininess);
         pushMatrix()
             multTranslation([2.5, 0, -2.5]);
             torus()
         popMatrix();
        
 
-        gl.uniform3fv(uKa, materialObj.Ka);
-        gl.uniform3fv(uKd, materialObj.Kd);
-        gl.uniform3fv(uKs, materialObj.Ks);
-        gl.uniform1f(shininess, materialObj.shininess);
+        gl.uniform3fv(uKa, bunnyMaterial.Ka);
+        gl.uniform3fv(uKd, bunnyMaterial.Kd);
+        gl.uniform3fv(uKs, bunnyMaterial.Ks);
+        gl.uniform1f(shininess, bunnyMaterial.shininess);
         pushMatrix()
             multTranslation([2.5, 0, 2.5]);
             bunny()
@@ -443,21 +443,21 @@ function setup(shaders)
     }
 
     function cylinder() {
-        multTranslation([0.0, 2/2 , 0.0]);
+        multTranslation([0.0, 1 , 0.0]);
         multScale([2, 2, 2]);
         uploadModelView();
         CYLINDER.draw(gl, program, mode);
     }
 
     function cube() {
-        multTranslation([0.0, 2/2 , 0.0]);
+        multTranslation([0.0, 1, 0.0]);
         multScale([2, 2, 2]);
         uploadModelView();
         CUBE.draw(gl, program, mode);
     }
 
     function torus() {
-        multTranslation([0.0, 1/2 , 0.0]);
+        multTranslation([0.0, 0.4, 0.0]);
         multScale([2, 2, 2]);
         uploadModelView();
         TORUS.draw(gl, program, mode);
