@@ -14,9 +14,9 @@ varying vec3 fPosition;
 void main() {
     fNormal = (mNormals * vNormal).xyz;
     
-    fViewer = vec3(0,0,1); 
-
-    fPosition = (mModelView * vPosition).xyz;
+    vec3 posC = (mModelView * vPosition).xyz;
+    fViewer = - posC;
+    fPosition = posC;
     
     gl_Position = mProjection * mModelView * vPosition;
 }

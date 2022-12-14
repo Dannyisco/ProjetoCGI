@@ -1,5 +1,5 @@
 import { buildProgramFromSources, loadShadersFromURLS, setupWebGL } from "../../libs/utils.js";
-import { ortho, lookAt, flatten,vec2, vec3, vec4, mult, rotateX, rotateY, inverse, transpose, normalMatrix, perspective } from "../../libs/MV.js";
+import { ortho, lookAt, flatten,vec2, vec3, vec4, mult, rotateX, rotateY, inverse, transpose, normalMatrix, perspective, add } from "../../libs/MV.js";
 import {modelView, loadMatrix, multRotationX, multRotationY, multRotationZ, multScale, pushMatrix, popMatrix, multTranslation } from "../../libs/stack.js";
 import { GUI } from '../../libs/dat.gui.module.js'
 
@@ -18,9 +18,11 @@ let uKa;
 let uKd;
 let uKs;
 let shininess;
-let nLights = 3;
 let dragging = false;
 let cursorPosition = vec2(0.0);
+const POSITIONAL = 'Positional';
+const DIRECTIONAL = 'Directional';
+const SPOTLIGHT = 'Spotlight';
 
 let optionsObj = {
     Mode : NaN,
@@ -34,7 +36,7 @@ let cameraObj = {
     fovy : 45,
     near : 0.1,
     far : 60,
-    eye : vec3(-15, 5, 0),
+    eye : vec3(-15, 29.1, 0),
     at : vec3(0, 0, 0),
     up : vec3(0, 1, 0)
 }
@@ -44,34 +46,34 @@ let lights = [
     ambient : [50,0,0],
     diffuse : [60,60,60],
     specular : [200,200,200],
-    position : [20,-5.0,0.0,0.0],
+    position : [-2.6,2.7,0.0,1.0],
     axis : [0.0,0.0,-1.0],
-    aperture : 10.0,
-    cutoff  : 10,
+    aperture : 11.8,
+    cutoff  : 8.1,
     on : true,
-    typeof : 'Pontual'
+    typeof : POSITIONAL
     },
     {
     ambient : [50,0,0],
     diffuse : [50,0,0],
     specular : [150,0,0],
-    position : [-20.0,5.0,5.0,0.0],
-    axis : [20.0,-5.0,-5.0],
-    aperture : 180.0,
-    cutoff  : -1,
-    on : true,
-    typeof : 'Pontual'
+    position : [-2.6,2.7,0.0,1.0],
+    axis : [0.0,0.0,-1.0],
+    aperture : 11.8,
+    cutoff  : 8.1,
+    on : false,
+    typeof : POSITIONAL
     },
     {
     ambient : [75,75,100],
     diffuse : [75,75,100],
     specular : [150,150,175],
-    position : [0,0,10,0.0],
-    axis : [-5.0,-5.0,-2.0],
-    aperture : 180.0,
-    cutoff  : -1,
-    on : true,
-    typeof : 'Pontual'
+    position : [-2.6,2.7,0.0,1.0],
+    axis : [0.0,0.0,-1.0],
+    aperture : 11.8,
+    cutoff  : 8.1,
+    on : false,
+    typeof : POSITIONAL
     }
 ];
 
@@ -150,24 +152,24 @@ up.add(cameraObj.up, 2, -1, 1, 0.01).step(0.1).name('z').listen();
 //lights
 const lightsFolder= gui.addFolder('Lights')
 
-for(let i=0; i < nLights; i++) {
-
+for(let i=0; i < lights.length; i++) {
     addLightFolder(i);
 }
 
 function addLightFolder(i) {
-        const light = lightsFolder.addFolder('Light' + (i+1));
+    const light = lightsFolder.addFolder('Light' + (i+1));
 
     light.add(lights[i],'on', true, false).name('On');
 
-    const menu = light.add(lights[i], 'typeof', {pontual: "Pontual", directional: "Directional", spotlight: "Spotlight"},
-).listen();
+    const menu = light.add(lights[i], 'typeof', {Positional: POSITIONAL, Directional: DIRECTIONAL, Spotlight: SPOTLIGHT}).listen();
 
-menu.onChange(value => { 
-    console.log('Selected value: ${value}');
-    //if(lights[i].typeof== 'Directional') lights[i].position[3]=1.0; VER duvida
-});
-    
+    menu.onChange(function(x){
+        x != SPOTLIGHT ? spotlightSett.hide() : spotlightSett.show();
+
+        if(lights[i].typeof== DIRECTIONAL) lights[i].position[3]=0.0;
+        else lights[i].position[3]=1.0;
+        });
+
     
     const intensities = light.addFolder('Intensities')
     intensities.addColor(lights[i], 'ambient').listen();
@@ -178,21 +180,22 @@ menu.onChange(value => {
     position.add(lights[i].position,0, -10, 50).step(0.1).name('x').listen();
     position.add(lights[i].position,1, 0, 90).step(0.1).name('y').listen();
     position.add(lights[i].position,2).step(0.1).name('z').listen();
-    position.add(lights[i].position,3, 0, 1).step(0.1).name('w').listen();
-
-    const axis = light.addFolder('Axis')
-
-   /* var x = axis.add(lights[i].axis,0).step(0.1).name('x').listen();
+    var x = position.add(lights[i].position,3).name('w').listen();
     x.domElement.style.pointerEvents = "none";
-    x.domElement.style.opacity = .5;*/
+    x.domElement.style.opacity = .5;
 
-    //duvidaaa
+    const spotlightSett = light.addFolder('Spotlight');
 
+    const axis = spotlightSett.addFolder('Axis')
+    axis.add(lights[i].axis,0).step(0.1).name('x').listen();
     axis.add(lights[i].axis,1).step(0.1).name('y').listen();
     axis.add(lights[i].axis,2).step(0.1).name('z').listen();
 
-    light.add(lights[i], 'aperture', 0, 180).step(0.1).listen();
-    light.add(lights[i], 'cutoff', ).step(0.1).name('cut off').listen();
+    spotlightSett.add(lights[i], 'aperture', 0, 180).step(0.1).listen();
+    spotlightSett.add(lights[i], 'cutoff', 0).step(0.1).name('cut off').listen();
+
+    if(lights[i].typeof != SPOTLIGHT)
+    spotlightSett.hide();
 }
 
     //material
@@ -244,11 +247,6 @@ let initpos = vec2(0,0);
             else cameraObj.Gama += dx;
             
 
-            /*cameraObj.Theta > 180 ? cameraObj.Theta = 180 : cameraObj.Theta += dx;
-            cameraObj.Gama > 180 ? cameraObj.Gama = 180 : cameraObj.Gama += dy;
-            cameraObj.Theta < -180 ? cameraObj.Theta = -180 : cameraObj.Theta += dx;
-            cameraObj.Gama < -180 ? cameraObj.Gama = -180 : cameraObj.Gama += dy;*/
-
         }
         initpos[0] = cursorPos[0];
         initpos[1] = cursorPos[1];
@@ -262,7 +260,7 @@ function setup(shaders)
     gl = setupWebGL(canvas); 
     mode = gl.TRIANGLES; 
 
-    let program = buildProgramFromSources(gl, shaders["shader.vert"], shaders["shader.frag"]);
+    let program = buildProgramFromSources(gl, shaders["phong.vert"], shaders["phong.frag"]);
 
     let mProjection = perspective(cameraObj.fovy, aspect, cameraObj.near, cameraObj.far)
     let mView = lookAt([-15, 5, 0], [0, 0, 0], [0, 1, 0]);
@@ -320,6 +318,8 @@ function setup(shaders)
 
 
     function render() {
+      
+    
         mProjection = perspective(cameraObj.fovy, aspect, cameraObj.near, cameraObj.far)
 
         mView = mult(lookAt([cameraObj.eye[0], cameraObj.eye[1], cameraObj.eye[2]], 
@@ -354,9 +354,9 @@ function setup(shaders)
         gl.uniformMatrix4fv(mview, false, flatten(mView));
         gl.uniformMatrix4fv(mViewNormals,false, flatten(normalMatrix(mView)));
         gl.uniformMatrix4fv(mprojection,false, flatten(mProjection));
-        gl.uniform1i(uNLights, nLights);
+        gl.uniform1i(uNLights, lights.length);
 
-        for(let i=0; i < nLights; i++) {
+        for(let i=0; i < lights.length; i++) {
             const ambient = gl.getUniformLocation(program, "uLights[" + i + "].ambient");
             const diffuse = gl.getUniformLocation(program, "uLights[" + i + "].diffuse");
             const specular = gl.getUniformLocation(program, "uLights[" + i + "].specular");
@@ -365,6 +365,7 @@ function setup(shaders)
             const cutoff = gl.getUniformLocation(program, "uLights[" + i + "].cutoff");
             const aperture = gl.getUniformLocation(program, "uLights[" + i + "].aperture");
             const on = gl.getUniformLocation(program, "uLights[" + i + "].on");
+            const type = gl.getUniformLocation(program, "uLights[" + i + "].typeof");
             gl.uniform3fv(ambient, lights[i].ambient); 
             gl.uniform3fv(diffuse, lights[i].diffuse);  
             gl.uniform3fv(specular, lights[i].specular);
@@ -372,11 +373,12 @@ function setup(shaders)
             gl.uniform3fv(axis, vec3(lights[i].axis[0], lights[i].axis[1], lights[i].axis[2]));
             gl.uniform1f(cutoff , lights[i].cutoff);
             gl.uniform1f(aperture, lights[i].aperture);
-            if(lights[i].on == true){
-            gl.uniform1i(on, 1);
-            }else{
-            gl.uniform1i(on, 0);
-            }
+            if(lights[i].on == true) gl.uniform1i(on, 1);
+            else gl.uniform1i(on, 0);
+            
+            if(lights[i].typeof == 'Positional') gl.uniform1i(type, 0);
+            else if(lights[i].typeof == 'Directional') gl.uniform1i(type, 1);
+            else gl.uniform1i(type, 2);
         }
 
         pushMatrix()
@@ -452,7 +454,7 @@ function setup(shaders)
     }
 
     function torus() {
-        multTranslation([0.0, 2/2 , 0.0]);
+        multTranslation([0.0, 1/2 , 0.0]);
         multScale([2, 2, 2]);
         uploadModelView();
         TORUS.draw(gl, program, mode);
@@ -477,5 +479,5 @@ function setup(shaders)
         popMatrix()
     }
 }
-const urls = ["shader.vert", "shader.frag"];
+const urls = ["phong.vert", "phong.frag"];
 loadShadersFromURLS(urls).then(shaders => setup(shaders))
